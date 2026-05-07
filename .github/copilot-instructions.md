@@ -29,7 +29,6 @@ it is generated from.
 | `.prettierrc.yml`    | Prettier Formatter Configuration                         |
 | `.yaml-lint.yml`     | YAML Linter Configuration                                |
 | `action.yml`         | GitHub Action Metadata                                   |
-| `CODEOWNERS`         | Code Owners File                                         |
 | `eslint.config.mjs`  | ESLint Configuration                                     |
 | `jest.config.js`     | Jest Configuration                                       |
 | `LICENSE`            | License File                                             |
