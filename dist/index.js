@@ -78279,22 +78279,20 @@ var PublishActionRunner = class {
   summaryWriter;
   async run() {
     const diagnostics = new DiagnosticBag();
-    let actionInputs;
-    let publishMetadata;
     const inputResult = this.inputReader.read();
     if (!inputResult.ok) {
       diagnostics.mergeArray(inputResult.diagnostics);
-      await this.finishFailure(diagnostics.all(), actionInputs, publishMetadata);
+      await this.finishFailure(diagnostics.all());
       return;
     }
     diagnostics.mergeArray(inputResult.diagnostics);
-    actionInputs = inputResult.value;
+    const actionInputs = inputResult.value;
     const releaseTagResult = await this.releaseTagResolver.resolve(
       actionInputs.releaseTagInput
     );
     diagnostics.mergeArray(releaseTagResult.diagnostics);
     if (!releaseTagResult.ok) {
-      await this.finishFailure(diagnostics.all(), actionInputs, publishMetadata);
+      await this.finishFailure(diagnostics.all(), actionInputs);
       return;
     }
     const metadataResult = await this.metadataReader.read(
@@ -78303,10 +78301,10 @@ var PublishActionRunner = class {
     );
     diagnostics.mergeArray(metadataResult.diagnostics);
     if (!metadataResult.ok) {
-      await this.finishFailure(diagnostics.all(), actionInputs, publishMetadata);
+      await this.finishFailure(diagnostics.all(), actionInputs);
       return;
     }
-    publishMetadata = metadataResult.value;
+    const publishMetadata = metadataResult.value;
     const githubClientResult = this.githubClientFactory.create(
       actionInputs.token
     );
@@ -78427,4 +78425,3 @@ async function run() {
 
 // src/index.ts
 run();
-//# sourceMappingURL=index.js.map

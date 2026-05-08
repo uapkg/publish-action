@@ -181,3 +181,10 @@ npm run bundle
 
 The bundled output in `dist/` is generated code and should be refreshed after
 source changes.
+
+Source maps are disabled by default to avoid large `.map` diffs in git history.
+If you need source maps for local debugging, run:
+
+```bash
+BUILD_SOURCE_MAP=true npm run bundle
+```
