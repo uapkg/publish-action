@@ -64016,26 +64016,12 @@ var PublishActionInputReader = class {
         { input: "existing-request-policy", value: rawPolicy }
       );
     }
-    if (manifestPath.length === 0) {
-      bag.addError(
-        "PUBLISH_ACTION_INPUT_INVALID",
-        'Input "manifest-path" cannot be empty.',
-        { input: "manifest-path" }
-      );
-    }
-    if (registryRepo.length === 0) {
-      bag.addError(
-        "PUBLISH_ACTION_INPUT_INVALID",
-        'Input "registry-repo" cannot be empty.',
-        { input: "registry-repo" }
-      );
-    }
     return bag.toResult({
       token,
       registryRepo,
       manifestPath,
       releaseTagInput,
-      existingRequestPolicy: rawPolicy || DEFAULT_EXISTING_REQUEST_POLICY
+      existingRequestPolicy: rawPolicy
     });
   }
 };

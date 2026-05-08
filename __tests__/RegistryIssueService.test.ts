@@ -15,7 +15,11 @@ describe('RegistryIssueService', () => {
       number: number
       html_url: string
       title: string
+      pull_request?: unknown
     }[]
+    readonly authError?: Error
+    readonly searchError?: Error
+    readonly createError?: Error
   }): {
     readonly api: GitHubApi
     readonly createCalls: { title: string; body: string }[]
@@ -25,13 +29,23 @@ describe('RegistryIssueService', () => {
     const api: GitHubApi = {
       rest: {
         users: {
-          getAuthenticated: async () => ({ data: { login: 'token-user' } })
+          getAuthenticated: async () => {
+            if (options?.authError) {
+              throw options.authError
+            }
+
+            return { data: { login: 'token-user' } }
+          }
         },
         repos: {
           getReleaseByTag: async () => ({ data: { assets: [] } })
         },
         issues: {
           create: async (params) => {
+            if (options?.createError) {
+              throw options.createError
+            }
+
             createCalls.push({ title: params.title, body: params.body })
             return {
               data: {
@@ -43,11 +57,17 @@ describe('RegistryIssueService', () => {
         }
       },
       search: {
-        issuesAndPullRequests: async () => ({
-          data: {
-            items: options?.existingItems ?? []
+        issuesAndPullRequests: async () => {
+          if (options?.searchError) {
+            throw options.searchError
           }
-        })
+
+          return {
+            data: {
+              items: options?.existingItems ?? []
+            }
+          }
+        }
       }
     }
 
@@ -150,5 +170,83 @@ describe('RegistryIssueService', () => {
     expect(createCalls[0].title).toBe('[publish] my-package@1.2.0')
     expect(createCalls[0].body).toContain('### Package Name')
     expect(createCalls[0].body).toContain('my-package')
+  })
+
+  it('adds warning diagnostics when multiple matching issues exist', async () => {
+    const { api } = createApi({
+      existingItems: [
+        {
+          number: 7,
+          html_url: 'https://github.com/uapkg/registry/issues/7',
+          title: '[publish] my-package@1.2.0'
+        },
+        {
+          number: 8,
+          html_url: 'https://github.com/uapkg/registry/issues/8',
+          title: '[publish] my-package@1.2.0'
+        }
+      ]
+    })
+
+    const service = new RegistryIssueService(
+      api,
+      new GitHubApiExecutor(logger),
+      logger
+    )
+
+    const result = await service.createOrReuse(request)
+
+    expect(result.ok).toBe(true)
+    if (!result.ok) {
+      return
+    }
+
+    expect(result.value.issueNumber).toBe(7)
+    expect(
+      result.diagnostics.some(
+        (d) => d.code === 'PUBLISH_ACTION_DUPLICATE_ISSUES_WARNING'
+      )
+    ).toBe(true)
+  })
+
+  it('fails when authentication lookup fails during existing issue search', async () => {
+    const { api } = createApi({
+      authError: Object.assign(new Error('unauthorized'), {
+        status: 401,
+        response: { headers: {} }
+      })
+    })
+
+    const service = new RegistryIssueService(
+      api,
+      new GitHubApiExecutor(logger),
+      logger
+    )
+
+    const result = await service.createOrReuse(request)
+
+    expect(result.ok).toBe(false)
+  })
+
+  it('fails when create issue API call fails', async () => {
+    const { api } = createApi({
+      createError: Object.assign(new Error('not found'), {
+        status: 404,
+        response: { headers: {} }
+      })
+    })
+
+    const service = new RegistryIssueService(
+      api,
+      new GitHubApiExecutor(logger),
+      logger
+    )
+
+    const result = await service.createOrReuse({
+      ...request,
+      existingRequestPolicy: 'create-new'
+    })
+
+    expect(result.ok).toBe(false)
   })
 })

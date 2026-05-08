@@ -77,4 +77,43 @@ describe('ReleaseTagResolver', () => {
 
     expect(result.ok).toBe(false)
   })
+
+  it('adds a warning when event payload file cannot be read', async () => {
+    process.env.GITHUB_EVENT_PATH = join(
+      tmpdir(),
+      'publish-action-event-does-not-exist.json'
+    )
+
+    const resolver = new ReleaseTagResolver()
+    const result = await resolver.resolve()
+
+    expect(result.ok).toBe(false)
+    expect(
+      result.diagnostics.some(
+        (d) => d.code === 'PUBLISH_ACTION_EVENT_PAYLOAD_READ_WARNING'
+      )
+    ).toBe(true)
+  })
+
+  it('adds a warning when event payload is invalid json', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'publish-action-bad-json-'))
+
+    try {
+      const eventPath = join(directory, 'event.json')
+      await writeFile(eventPath, '{invalid-json', 'utf8')
+      process.env.GITHUB_EVENT_PATH = eventPath
+
+      const resolver = new ReleaseTagResolver()
+      const result = await resolver.resolve()
+
+      expect(result.ok).toBe(false)
+      expect(
+        result.diagnostics.some(
+          (d) => d.code === 'PUBLISH_ACTION_EVENT_PAYLOAD_PARSE_WARNING'
+        )
+      ).toBe(true)
+    } finally {
+      await rm(directory, { recursive: true, force: true })
+    }
+  })
 })

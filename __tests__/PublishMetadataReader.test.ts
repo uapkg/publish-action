@@ -53,4 +53,62 @@ describe('PublishMetadataReader', () => {
 
     expect(result.ok).toBe(false)
   })
+
+  it('fails when manifest reader returns diagnostics', async () => {
+    const reader = new PublishMetadataReader(
+      {
+        async read() {
+          return {
+            ok: false as const,
+            diagnostics: [
+              {
+                level: 'error' as const,
+                code: 'MANIFEST_READ_ERROR',
+                message: 'Manifest read failed',
+                data: {
+                  filePath: 'uapkg.json',
+                  reason: 'missing file'
+                }
+              }
+            ]
+          }
+        }
+      } as never,
+      () => process.cwd()
+    )
+
+    const result = await reader.read('uapkg.json', 'v1.0.0')
+
+    expect(result.ok).toBe(false)
+  })
+
+  it('fails when GITHUB_REPOSITORY is missing', async () => {
+    delete process.env.GITHUB_REPOSITORY
+
+    const reader = new PublishMetadataReader(
+      {
+        async read() {
+          return {
+            ok: true as const,
+            value: {
+              name: 'my-package',
+              version: '1.2.0',
+              kind: 'plugin' as const
+            },
+            diagnostics: []
+          }
+        }
+      } as never,
+      () => process.cwd()
+    )
+
+    const result = await reader.read('uapkg.json', 'v1.0.0')
+
+    expect(result.ok).toBe(false)
+    if (result.ok) {
+      return
+    }
+
+    expect(result.diagnostics[0]?.code).toBe('PUBLISH_ACTION_SOURCE_MISSING')
+  })
 })
