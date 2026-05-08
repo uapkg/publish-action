@@ -10,10 +10,10 @@ This action does not publish packages directly.
 This action is only responsible for:
 
 1. Reading publish metadata from `uapkg.json`.
-2. Resolving the release tag/ref.
-3. Verifying exactly one publishable release asset exists.
-4. Creating or reusing a registry issue.
-5. Returning issue details as outputs.
+1. Resolving the release tag/ref.
+1. Verifying exactly one publishable release asset exists.
+1. Creating or reusing a registry issue.
+1. Returning issue details as outputs.
 
 The registry bot owns validation and actual publishing.
 
@@ -44,9 +44,9 @@ The registry bot owns validation and actual publishing.
 Release resolution order:
 
 1. Explicit `release-tag`
-2. `github.event.release.tag_name`
-3. `github.ref_name` when `github.ref_type == tag`
-4. Fail
+1. `github.event.release.tag_name`
+1. `github.ref_name` when `github.ref_type == tag`
+1. Fail
 
 ### `existing-request-policy`
 
@@ -122,7 +122,7 @@ Existing issue lookup uses open issues authored by the token user.
 
 ## Job Summary
 
-This action appends a markdown summary to `GITHUB_STEP_SUMMARY`.
+This action appends a Markdown summary to `GITHUB_STEP_SUMMARY`.
 
 - It does not overwrite prior step summaries.
 - It includes success/failure status, package/ref context, issue details, and
