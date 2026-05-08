@@ -1,0 +1,50 @@
+name: UAPKG Publish Action
+description: Publish a package to the registry
+author: uapkg
+
+# Add your action's branding here. This will appear on the GitHub Marketplace.
+branding:
+  icon: upload-cloud
+  color: blue
+
+# Define your inputs here.
+inputs:
+  token:
+    description: GitHub token used to create issues in the target registry repository
+    required: true
+  registry-repo:
+    description: Registry repository in owner/name form
+    required: false
+    default: uapkg/registry
+  manifest-path:
+    description: Path to the uapkg manifest file
+    required: false
+    default: uapkg.json
+  release-tag:
+    description: Release tag or ref to publish
+    required: false
+  existing-request-policy:
+    description: Policy for handling an existing matching publish request issue
+    required: false
+    default: reuse-existing
+
+# Define your outputs here.
+outputs:
+  issue-number:
+    description: Registry issue number
+  issue-url:
+    description: Registry issue URL
+  issue-state:
+    description: Whether the issue was created or reused
+  package-name:
+    description: Package name read from uapkg.json
+  package-version:
+    description: Package version read from uapkg.json
+  package-source:
+    description: Package source repository in owner/name form
+  release-tag:
+    description: Resolved release tag
+
+runs:
+  using: node24
+  main: dist/index.js
