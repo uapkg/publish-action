@@ -184,8 +184,10 @@ describe('publish action e2e', () => {
   const envSnapshot = { ...process.env }
 
   const summary = core.summary as unknown as {
-    addRaw: jest.Mock<any, any>
-    write: jest.Mock<any, any>
+    addRaw: jest.MockedFunction<(message: string) => typeof core.summary>
+    write: jest.MockedFunction<
+      (options?: { overwrite?: boolean }) => Promise<void>
+    >
   }
 
   const inputValues: Record<string, string> = {

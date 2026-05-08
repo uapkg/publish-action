@@ -1,11 +1,10 @@
 import * as core from '@actions/core'
-import { DiagnosticBag, type Diagnostic, type Result } from '@uapkg/diagnostics'
+import { DiagnosticBag, type Diagnostic } from '@uapkg/diagnostics'
 import type {
   PublishActionInputs,
   PublishIssueResult,
   PublishMetadata
 } from '../contracts/ActionContracts.js'
-import type { GitHubApi } from '../contracts/GitHubContracts.js'
 import type { ActionLogger } from './ActionLogger.js'
 import { DiagnosticReporter } from './DiagnosticReporter.js'
 import { GitHubApiExecutor } from './GitHubApiExecutor.js'
@@ -32,18 +31,16 @@ export class PublishActionRunner {
 
   async run(): Promise<void> {
     const diagnostics = new DiagnosticBag()
-    let actionInputs: PublishActionInputs | undefined
-    let publishMetadata: PublishMetadata | undefined
 
     const inputResult = this.inputReader.read()
     if (!inputResult.ok) {
       diagnostics.mergeArray(inputResult.diagnostics)
-      await this.finishFailure(diagnostics.all(), actionInputs, publishMetadata)
+      await this.finishFailure(diagnostics.all())
       return
     }
 
     diagnostics.mergeArray(inputResult.diagnostics)
-    actionInputs = inputResult.value
+    const actionInputs: PublishActionInputs = inputResult.value
 
     const releaseTagResult = await this.releaseTagResolver.resolve(
       actionInputs.releaseTagInput
@@ -51,7 +48,7 @@ export class PublishActionRunner {
     diagnostics.mergeArray(releaseTagResult.diagnostics)
 
     if (!releaseTagResult.ok) {
-      await this.finishFailure(diagnostics.all(), actionInputs, publishMetadata)
+      await this.finishFailure(diagnostics.all(), actionInputs)
       return
     }
 
@@ -62,11 +59,11 @@ export class PublishActionRunner {
     diagnostics.mergeArray(metadataResult.diagnostics)
 
     if (!metadataResult.ok) {
-      await this.finishFailure(diagnostics.all(), actionInputs, publishMetadata)
+      await this.finishFailure(diagnostics.all(), actionInputs)
       return
     }
 
-    publishMetadata = metadataResult.value
+    const publishMetadata: PublishMetadata = metadataResult.value
 
     const githubClientResult = this.githubClientFactory.create(
       actionInputs.token

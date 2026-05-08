@@ -92,14 +92,11 @@ describe('GitHubApiExecutor', () => {
     )
 
     expect(rateLimitedResult.ok).toBe(false)
-    if (!rateLimitedResult.ok) {
-      expect(rateLimitedResult.diagnostics[0]?.message).toContain(
-        'rate limit is exhausted'
-      )
-      expect(rateLimitedResult.diagnostics[0]?.hint).toContain(
-        'rate limit to reset'
-      )
-    }
+    const rateLimitedDiagnostic = rateLimitedResult.ok
+      ? undefined
+      : rateLimitedResult.diagnostics[0]
+    expect(rateLimitedDiagnostic?.message).toContain('rate limit is exhausted')
+    expect(rateLimitedDiagnostic?.hint).toContain('rate limit to reset')
 
     const unknownResult = await executor.execute(
       'unknown failure',
@@ -109,14 +106,13 @@ describe('GitHubApiExecutor', () => {
     )
 
     expect(unknownResult.ok).toBe(false)
-    if (!unknownResult.ok) {
-      expect(unknownResult.diagnostics[0]?.message).toContain(
-        'GitHub API call "unknown failure" failed'
-      )
-      expect(unknownResult.diagnostics[0]?.hint).toContain(
-        'GitHub API availability'
-      )
-    }
+    const unknownDiagnostic = unknownResult.ok
+      ? undefined
+      : unknownResult.diagnostics[0]
+    expect(unknownDiagnostic?.message).toContain(
+      'GitHub API call "unknown failure" failed'
+    )
+    expect(unknownDiagnostic?.hint).toContain('GitHub API availability')
   })
 
   it('returns transient-failure messaging after a retry is exhausted', async () => {
