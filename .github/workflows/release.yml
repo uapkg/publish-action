@@ -1,0 +1,65 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  actions: write
+  contents: write
+  pull-requests: write
+
+jobs:
+  verify:
+    uses: ./.github/workflows/_verify.yml
+    with:
+      node-versions: '["24"]'
+
+  release:
+    needs: verify
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Configure git author
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Create release pull request or publish release
+        id: changesets
+        uses: changesets/action@v1
+        with:
+          version: npm run changeset:version
+          publish: npm run release:publish
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Read release metadata
+        id: release-meta
+        run: |
+          if [ -f .release.json ]; then
+            echo "created=true" >> "$GITHUB_OUTPUT"
+            echo "tag=$(node -e "const fs=require('node:fs');const data=JSON.parse(fs.readFileSync('.release.json','utf8'));process.stdout.write(data.tag);")" >> "$GITHUB_OUTPUT"
+          else
+            echo "created=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create GitHub release
+        if: steps.release-meta.outputs.created == 'true'
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ steps.release-meta.outputs.tag }}
+          target_commitish: action-release
+          generate_release_notes: true

@@ -24,6 +24,8 @@
   },
   "scripts": {
     "bundle": "npm run format:write && npm run package",
+    "changeset": "changeset",
+    "changeset:version": "changeset version",
     "ci-test": "cross-env NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 npx jest",
     "coverage": "npx make-coverage-badge --output-path ./badges/coverage.svg",
     "format:write": "npm run format:biome:write && npm run format:yaml:write",
@@ -41,6 +43,8 @@
     "package": "node ./script/build.mjs",
     "package:watch": "npm run package -- --watch",
     "prepare": "husky",
+    "release:publish": "node ./script/release-publish.mjs",
+    "smoke:release": "node ./script/post-build-smoke-check.mjs",
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 npx jest",
     "all": "npm run format:write && npm run lint && npm run test && npm run coverage && npm run package"
   },
@@ -54,6 +58,7 @@
     "@uapkg/package-manifest": "^1.1.10"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.29.7",
     "@biomejs/biome": "^2.2.6",
     "@jest/globals": "^30.4.0",
     "@types/jest": "^30.0.0",
@@ -65,6 +70,7 @@
     "make-coverage-badge": "^1.2.0",
     "github-actionlint": "^1.7.12",
     "prettier": "^3.8.3",
+    "semver": "^7.7.2",
     "ts-jest": "^29.4.9",
     "ts-jest-resolver": "^2.0.1",
     "typescript": "^6.0.3"

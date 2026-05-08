@@ -1,0 +1,29 @@
+name: Verify
+
+on:
+  workflow_call:
+    inputs:
+      node-versions:
+        required: true
+        type: string
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node: ${{ fromJson(inputs.node-versions) }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - run: npm ci
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm run test

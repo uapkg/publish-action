@@ -1,0 +1,11 @@
+name: Test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    uses: ./.github/workflows/_verify.yml
+    with:
+      node-versions: '["22", "24"]'

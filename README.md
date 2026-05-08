@@ -211,12 +211,39 @@ Bundle the action:
 npm run bundle
 ```
 
-The bundled output in `dist/` is generated code and should be refreshed after
-source changes.
-
-Source maps are disabled by default to avoid large `.map` diffs in Git history.
-If you need source maps for local debugging, run:
+Run release smoke checks:
 
 ```bash
-BUILD_SOURCE_MAP=true npm run bundle
+npm run smoke:release
 ```
+
+## Release Process
+
+This repository uses Changesets to automate release pull requests and publishing.
+
+Create a changeset for release-worthy changes:
+
+```bash
+npm run changeset
+```
+
+When changesets are merged to `main`, the release workflow:
+
+1. Opens or updates a release PR with version bumps.
+1. Publishes a release after that PR is merged.
+1. Builds `dist/index.js` and `dist/index.js.map`.
+1. Runs release smoke checks.
+1. Creates an orphan-branch release commit (`action-release`) with:
+  - `action.yml`
+  - `dist/`
+  - `README.md`
+  - `LICENSE`
+  - `.release.json` metadata
+1. Pushes:
+  - immutable tag `vX.Y.Z`
+  - mutable major tag `vX` (semver-max target for that major)
+1. Creates a GitHub release using `softprops/action-gh-release`.
+
+`dist/` is intentionally not tracked on `main`.
+
+Source maps are always generated for release bundles.
