@@ -23,11 +23,15 @@
     "node": ">=24.0.0"
   },
   "scripts": {
+    "badge:make:all": "npm run badge:make:coverage && npm run badge:make:version && npm run badge:make:test && npm run badge:make:sha",
+    "badge:make:coverage": "npx make-coverage-badge --output-path ./badges/coverage.svg",
+    "badge:make:version": "node ./script/make-badges.mjs version",
+    "badge:make:test": "node ./script/make-badges.mjs test",
+    "badge:make:sha": "node ./script/make-badges.mjs sha",
     "bundle": "npm run format:write && npm run package",
     "changeset": "changeset",
     "changeset:version": "changeset version",
     "ci-test": "cross-env NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 npx jest",
-    "coverage": "npx make-coverage-badge --output-path ./badges/coverage.svg",
     "format:write": "npm run format:biome:write && npm run format:yaml:write",
     "format:check": "npm run format:biome:check && npm run format:yaml:check",
     "format:biome:write": "npx @biomejs/biome format --write .",
@@ -47,7 +51,7 @@
     "smoke:release": "node ./script/post-build-smoke-check.mjs",
     "typecheck": "npx tsc -p tsconfig.test.json --noEmit",
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 npx jest",
-    "all": "npm run format:write && npm run lint && npm run typecheck && npm run test && npm run coverage && npm run package"
+    "all": "npm run format:write && npm run lint && npm run typecheck && npm run test && npm run badge:make:all && npm run package"
   },
   "license": "MIT",
   "dependencies": {
@@ -64,6 +68,7 @@
     "@jest/globals": "^30.4.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^25.6.2",
+    "badge-maker": "^5.0.2",
     "cross-env": "^10.1.0",
     "esbuild": "^0.28.0",
     "github-actionlint": "^1.7.12",

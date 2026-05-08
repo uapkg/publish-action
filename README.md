@@ -1,5 +1,10 @@
 # @uapkg/publish-action
 
+[![Test](https://github.com/uapkg/publish-action/actions/workflows/test.yml/badge.svg)](https://github.com/uapkg/publish-action/actions/workflows/test.yml)
+![Coverage](./badges/coverage.svg)
+![Version](./badges/version.svg)
+![Source SHA](./badges/source-sha.svg)
+
 TypeScript GitHub Action that submits a UAPKG publish request to a registry
 repository by creating or reusing a GitHub issue.
 
@@ -231,14 +236,17 @@ When changesets are merged to `main`, the release workflow:
 
 1. Opens or updates a release PR with version bumps.
 1. Publishes a release after that PR is merged.
+1. Runs tests and regenerates release badges (`coverage`, `version`, `test`, and `source-sha`).
 1. Builds `dist/index.js` and `dist/index.js.map`.
 1. Runs release smoke checks.
 1. Creates an orphan-branch release commit (`action-release`) with:
   - `action.yml`
+  - `badges/`
   - `dist/`
   - `README.md`
   - `LICENSE`
   - `.release.json` metadata
+1. Updates `badges/` on `main` only when the published version is the semver-latest release.
 1. Pushes:
   - immutable tag `vX.Y.Z`
   - mutable major tag `vX` (semver-max target for that major)

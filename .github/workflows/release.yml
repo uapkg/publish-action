@@ -51,11 +51,28 @@ jobs:
         id: release-meta
         run: |
           if [ -f .release.json ]; then
-            echo "created=true" >> "$GITHUB_OUTPUT"
-            echo "tag=$(node -e "const fs=require('node:fs');const data=JSON.parse(fs.readFileSync('.release.json','utf8'));process.stdout.write(data.tag);")" >> "$GITHUB_OUTPUT"
+            {
+              echo "created=true"
+              echo "tag=$(node -e "const fs=require('node:fs');const data=JSON.parse(fs.readFileSync('.release.json','utf8'));process.stdout.write(data.tag);")"
+              echo "is_latest=$(node -e "const fs=require('node:fs');const data=JSON.parse(fs.readFileSync('.release.json','utf8'));process.stdout.write(String(Boolean(data.isLatestRelease)));")"
+            } >> "$GITHUB_OUTPUT"
           else
             echo "created=false" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Update badges on main for latest release
+        if: steps.release-meta.outputs.created == 'true' && steps.release-meta.outputs.is_latest == 'true'
+        env:
+          RELEASE_TAG: ${{ steps.release-meta.outputs.tag }}
+        run: |
+          if [ -z "$(git status --porcelain -- badges)" ]; then
+            echo "No badge changes to commit."
+            exit 0
+          fi
+
+          git add badges
+          git commit -m "chore: update badges for ${RELEASE_TAG} [skip ci]"
+          git push origin HEAD:main
 
       - name: Create GitHub release
         if: steps.release-meta.outputs.created == 'true'

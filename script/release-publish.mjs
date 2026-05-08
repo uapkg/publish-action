@@ -6,12 +6,16 @@ import semver from 'semver'
 
 const RELEASE_BRANCH = 'action-release'
 const RELEASE_MARKER_FILE = '.release.json'
-const RELEASE_FILES = ['action.yml', 'README.md', 'LICENSE', 'dist']
+const RELEASE_FILES = ['action.yml', 'README.md', 'LICENSE', 'badges', 'dist']
 
 class CommandRunner {
   run(command, args, options = {}) {
     const result = spawnSync(command, args, {
       cwd: options.cwd,
+      env: {
+        ...process.env,
+        ...options.env,
+      },
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
     })
@@ -85,18 +89,20 @@ class GitTagResolver {
     return result.stdout.trim().length > 0
   }
 
-  resolveMajorTagTarget(version) {
-    const major = semver.major(version)
-    const tagPattern = `v${major}.*.*`
-
+  listSemverVersions(tagPattern) {
     const tagOutput = this.commandRunner.git(['tag', '--list', tagPattern], { cwd: this.repoRoot }).stdout.trim()
 
-    const versions = tagOutput
+    return tagOutput
       .split('\n')
       .map((tag) => tag.trim())
       .filter((tag) => tag.length > 0)
       .map((tag) => tag.replace(/^v/, ''))
       .filter((tag) => semver.valid(tag))
+  }
+
+  resolveMajorTagTarget(version) {
+    const major = semver.major(version)
+    const versions = this.listSemverVersions(`v${major}.*.*`)
 
     versions.push(version)
 
@@ -107,6 +113,18 @@ class GitTagResolver {
 
     return `v${maxVersion}`
   }
+
+  resolveLatestTag(version) {
+    const versions = this.listSemverVersions('v*.*.*')
+    versions.push(version)
+
+    const latestVersion = semver.rsort(versions)[0]
+    if (!latestVersion) {
+      throw new Error('Unable to resolve latest release version from tags')
+    }
+
+    return `v${latestVersion}`
+  }
 }
 
 class ReleaseArtifactBuilder {
@@ -115,7 +133,16 @@ class ReleaseArtifactBuilder {
     this.commandRunner = commandRunner
   }
 
-  buildAndSmokeCheck() {
+  buildAndSmokeCheck(context) {
+    this.commandRunner.npm(['run', 'test'], { cwd: this.repoRoot })
+    this.commandRunner.npm(['run', 'badge:make:all'], {
+      cwd: this.repoRoot,
+      env: {
+        BADGE_SOURCE_SHA: context.sourceCommit,
+        BADGE_TEST_STATUS: 'passing',
+        BADGE_VERSION: context.version,
+      },
+    })
     this.commandRunner.npm(['run', 'package'], { cwd: this.repoRoot })
     this.commandRunner.npm(['run', 'smoke:release'], { cwd: this.repoRoot })
   }
@@ -127,7 +154,7 @@ class ReleaseWorktreePublisher {
     this.commandRunner = commandRunner
   }
 
-  async publish(context, majorTargetTag) {
+  async publish(context, majorTargetTag, latestTag, isLatestRelease) {
     const worktreePath = await mkdtemp(join(tmpdir(), 'publish-action-release-'))
 
     this.commandRunner.git(['worktree', 'add', '--detach', worktreePath], {
@@ -155,6 +182,8 @@ class ReleaseWorktreePublisher {
         sourceCommit: context.sourceCommit,
         sourceRef: context.sourceRef,
         builtAt: context.builtAt,
+        isLatestRelease,
+        latestTag,
         tag: context.tag,
         majorTag: context.majorTag,
         majorTagTarget: majorTargetTag,
@@ -163,7 +192,7 @@ class ReleaseWorktreePublisher {
 
       await writeFile(join(worktreePath, '.release.json'), `${JSON.stringify(releaseMetadata, null, 2)}\n`, 'utf8')
 
-      this.commandRunner.git(['add', 'action.yml', 'README.md', 'LICENSE', 'dist', '.release.json'], {
+      this.commandRunner.git(['add', ...RELEASE_FILES, '.release.json'], {
         cwd: worktreePath,
       })
 
@@ -233,16 +262,21 @@ class ReleasePublisher {
       return
     }
 
-    this.builder.buildAndSmokeCheck()
+    const latestTag = this.tagResolver.resolveLatestTag(context.version)
+    const isLatestRelease = latestTag === context.tag
+
+    this.builder.buildAndSmokeCheck(context)
 
     this.tagResolver.fetchTags()
     const majorTargetTag = this.tagResolver.resolveMajorTagTarget(context.version)
 
-    const releaseInfo = await this.worktreePublisher.publish(context, majorTargetTag)
+    const releaseInfo = await this.worktreePublisher.publish(context, majorTargetTag, latestTag, isLatestRelease)
 
     await writeFile(markerPath, `${JSON.stringify(releaseInfo, null, 2)}\n`, 'utf8')
 
-    console.log(`Published ${context.tag}. Mutable tag ${context.majorTag} now points to ${majorTargetTag}.`)
+    console.log(
+      `Published ${context.tag}. Latest release: ${isLatestRelease}. Mutable tag ${context.majorTag} now points to ${majorTargetTag}.`,
+    )
   }
 }
 
