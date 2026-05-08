@@ -1,0 +1,5 @@
+[codespell]
+# Skip directories that don't need spell checking
+skip = ./node_modules,./dist,./coverage,*lock.json*,./.licenses,./.vscode,./badges
+# Ignore specific Jest words that look like typos (case-insensitive)
+ignore-words-list = afterall,beforeall
