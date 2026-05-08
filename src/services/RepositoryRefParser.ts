@@ -13,7 +13,7 @@ export class RepositoryRefParser {
         'PUBLISH_ACTION_REPOSITORY_FORMAT',
         `Input "${fieldName}" must be in owner/repo form. Received "${value}".`,
         { fieldName, value },
-        'Use a value like "uapkg/registry".'
+        'Use a value like "uapkg/registry".',
       )
       return bag.toFailure()
     }
@@ -23,7 +23,7 @@ export class RepositoryRefParser {
     return bag.toResult({
       owner,
       name,
-      fullName: trimmed
+      fullName: trimmed,
     })
   }
 }

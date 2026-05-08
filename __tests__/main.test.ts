@@ -11,7 +11,7 @@ class MockPublishActionRunner {
 
 jest.unstable_mockModule('@actions/core', () => core)
 jest.unstable_mockModule('../src/services/PublishActionRunner.js', () => ({
-  PublishActionRunner: MockPublishActionRunner
+  PublishActionRunner: MockPublishActionRunner,
 }))
 jest.unstable_mockModule('../src/services/ActionLogger.js', () => ({
   UapkgActionLogger: class {
@@ -30,7 +30,7 @@ jest.unstable_mockModule('../src/services/ActionLogger.js', () => ({
     debug(): void {
       // no-op for tests
     }
-  }
+  },
 }))
 
 const { run } = await import('../src/main.js')

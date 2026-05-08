@@ -1,10 +1,6 @@
 import * as core from '@actions/core'
 import { DiagnosticBag, type Diagnostic } from '@uapkg/diagnostics'
-import type {
-  PublishActionInputs,
-  PublishIssueResult,
-  PublishMetadata
-} from '../contracts/ActionContracts.js'
+import type { PublishActionInputs, PublishIssueResult, PublishMetadata } from '../contracts/ActionContracts.js'
 import type { ActionLogger } from './ActionLogger.js'
 import { DiagnosticReporter } from './DiagnosticReporter.js'
 import { GitHubApiExecutor } from './GitHubApiExecutor.js'
@@ -26,7 +22,7 @@ export class PublishActionRunner {
     private readonly repositoryRefParser = new RepositoryRefParser(),
     private readonly githubClientFactory = new GitHubClientFactory(),
     private readonly diagnosticReporter = new DiagnosticReporter(logger),
-    private readonly summaryWriter = new JobSummaryWriter()
+    private readonly summaryWriter = new JobSummaryWriter(),
   ) {}
 
   async run(): Promise<void> {
@@ -42,9 +38,7 @@ export class PublishActionRunner {
     diagnostics.mergeArray(inputResult.diagnostics)
     const actionInputs: PublishActionInputs = inputResult.value
 
-    const releaseTagResult = await this.releaseTagResolver.resolve(
-      actionInputs.releaseTagInput
-    )
+    const releaseTagResult = await this.releaseTagResolver.resolve(actionInputs.releaseTagInput)
     diagnostics.mergeArray(releaseTagResult.diagnostics)
 
     if (!releaseTagResult.ok) {
@@ -52,10 +46,7 @@ export class PublishActionRunner {
       return
     }
 
-    const metadataResult = await this.metadataReader.read(
-      actionInputs.manifestPath,
-      releaseTagResult.value
-    )
+    const metadataResult = await this.metadataReader.read(actionInputs.manifestPath, releaseTagResult.value)
     diagnostics.mergeArray(metadataResult.diagnostics)
 
     if (!metadataResult.ok) {
@@ -65,9 +56,7 @@ export class PublishActionRunner {
 
     const publishMetadata: PublishMetadata = metadataResult.value
 
-    const githubClientResult = this.githubClientFactory.create(
-      actionInputs.token
-    )
+    const githubClientResult = this.githubClientFactory.create(actionInputs.token)
     diagnostics.mergeArray(githubClientResult.diagnostics)
 
     if (!githubClientResult.ok) {
@@ -77,10 +66,7 @@ export class PublishActionRunner {
 
     const githubApi = githubClientResult.value
 
-    const sourceRepoResult = this.repositoryRefParser.parse(
-      publishMetadata.packageSource,
-      'package-source'
-    )
+    const sourceRepoResult = this.repositoryRefParser.parse(publishMetadata.packageSource, 'package-source')
     diagnostics.mergeArray(sourceRepoResult.diagnostics)
 
     if (!sourceRepoResult.ok) {
@@ -88,10 +74,7 @@ export class PublishActionRunner {
       return
     }
 
-    const registryRepoResult = this.repositoryRefParser.parse(
-      actionInputs.registryRepo,
-      'registry-repo'
-    )
+    const registryRepoResult = this.repositoryRefParser.parse(actionInputs.registryRepo, 'registry-repo')
     diagnostics.mergeArray(registryRepoResult.diagnostics)
 
     if (!registryRepoResult.ok) {
@@ -101,17 +84,13 @@ export class PublishActionRunner {
 
     const apiExecutor = new GitHubApiExecutor(this.logger)
 
-    const releaseAssetVerifier = new ReleaseAssetVerifier(
-      githubApi,
-      apiExecutor,
-      this.logger
-    )
+    const releaseAssetVerifier = new ReleaseAssetVerifier(githubApi, apiExecutor, this.logger)
 
     const releaseAssetResult = await releaseAssetVerifier.verify({
       packageSource: sourceRepoResult.value,
       releaseTag: publishMetadata.releaseTag,
       packageName: publishMetadata.packageName,
-      packageVersion: publishMetadata.packageVersion
+      packageVersion: publishMetadata.packageVersion,
     })
 
     diagnostics.mergeArray(releaseAssetResult.diagnostics)
@@ -121,11 +100,7 @@ export class PublishActionRunner {
       return
     }
 
-    const registryIssueService = new RegistryIssueService(
-      githubApi,
-      apiExecutor,
-      this.logger
-    )
+    const registryIssueService = new RegistryIssueService(githubApi, apiExecutor, this.logger)
 
     const issueResult = await registryIssueService.createOrReuse({
       registryRepo: registryRepoResult.value,
@@ -133,7 +108,7 @@ export class PublishActionRunner {
       packageName: publishMetadata.packageName,
       packageVersion: publishMetadata.packageVersion,
       packageSource: publishMetadata.packageSource,
-      releaseTag: publishMetadata.releaseTag
+      releaseTag: publishMetadata.releaseTag,
     })
 
     diagnostics.mergeArray(issueResult.diagnostics)
@@ -152,14 +127,11 @@ export class PublishActionRunner {
       registryRepo: actionInputs.registryRepo,
       existingRequestPolicy: actionInputs.existingRequestPolicy,
       issue: issueResult.value,
-      diagnostics: report
+      diagnostics: report,
     })
   }
 
-  private setOutputs(
-    metadata: PublishMetadata,
-    issue: PublishIssueResult
-  ): void {
+  private setOutputs(metadata: PublishMetadata, issue: PublishIssueResult): void {
     core.setOutput('issue-number', issue.issueNumber)
     core.setOutput('issue-url', issue.issueUrl)
     core.setOutput('issue-state', issue.issueState)
@@ -172,7 +144,7 @@ export class PublishActionRunner {
   private async finishFailure(
     diagnostics: readonly Diagnostic[],
     actionInputs?: PublishActionInputs,
-    metadata?: PublishMetadata
+    metadata?: PublishMetadata,
   ): Promise<void> {
     const report = this.diagnosticReporter.report(diagnostics)
 
@@ -180,7 +152,7 @@ export class PublishActionRunner {
       metadata,
       registryRepo: actionInputs?.registryRepo,
       existingRequestPolicy: actionInputs?.existingRequestPolicy,
-      diagnostics: report
+      diagnostics: report,
     })
 
     core.setFailed(this.getFailureMessage(diagnostics))

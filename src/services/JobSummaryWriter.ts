@@ -1,14 +1,9 @@
 import * as core from '@actions/core'
-import type {
-  PublishFailureSummary,
-  PublishSuccessSummary
-} from '../contracts/ActionContracts.js'
+import type { PublishFailureSummary, PublishSuccessSummary } from '../contracts/ActionContracts.js'
 
 export class JobSummaryWriter {
   async writeSuccess(summary: PublishSuccessSummary): Promise<void> {
-    const diagnosticsBlock = this.renderDiagnostics(
-      summary.diagnostics.formattedDiagnostics
-    )
+    const diagnosticsBlock = this.renderDiagnostics(summary.diagnostics.formattedDiagnostics)
 
     const markdown = [
       '## UAPKG Publish Action',
@@ -29,43 +24,31 @@ export class JobSummaryWriter {
       `- Errors: ${summary.diagnostics.errors}`,
       `- Warnings: ${summary.diagnostics.warnings}`,
       `- Info: ${summary.diagnostics.infos}`,
-      diagnosticsBlock
+      diagnosticsBlock,
     ].join('\n')
 
     await this.append(markdown)
   }
 
   async writeFailure(summary: PublishFailureSummary): Promise<void> {
-    const diagnosticsBlock = this.renderDiagnostics(
-      summary.diagnostics.formattedDiagnostics
-    )
+    const diagnosticsBlock = this.renderDiagnostics(summary.diagnostics.formattedDiagnostics)
 
     const markdown = [
       '## UAPKG Publish Action',
       '',
       '- Status: failed',
       summary.registryRepo ? `- Registry Repo: ${summary.registryRepo}` : '',
-      summary.existingRequestPolicy
-        ? `- Existing Request Policy: ${summary.existingRequestPolicy}`
-        : '',
-      summary.metadata?.packageName
-        ? `- Package Name: ${summary.metadata.packageName}`
-        : '',
-      summary.metadata?.packageVersion
-        ? `- Package Version: ${summary.metadata.packageVersion}`
-        : '',
-      summary.metadata?.packageSource
-        ? `- Package Source: ${summary.metadata.packageSource}`
-        : '',
-      summary.metadata?.releaseTag
-        ? `- Release Tag: ${summary.metadata.releaseTag}`
-        : '',
+      summary.existingRequestPolicy ? `- Existing Request Policy: ${summary.existingRequestPolicy}` : '',
+      summary.metadata?.packageName ? `- Package Name: ${summary.metadata.packageName}` : '',
+      summary.metadata?.packageVersion ? `- Package Version: ${summary.metadata.packageVersion}` : '',
+      summary.metadata?.packageSource ? `- Package Source: ${summary.metadata.packageSource}` : '',
+      summary.metadata?.releaseTag ? `- Release Tag: ${summary.metadata.releaseTag}` : '',
       '',
       '### Diagnostics',
       `- Errors: ${summary.diagnostics.errors}`,
       `- Warnings: ${summary.diagnostics.warnings}`,
       `- Info: ${summary.diagnostics.infos}`,
-      diagnosticsBlock
+      diagnosticsBlock,
     ]
       .filter((line) => line.length > 0)
       .join('\n')

@@ -1,9 +1,6 @@
 import * as core from '@actions/core'
 import type { Diagnostic } from '@uapkg/diagnostics'
-import {
-  createFormatterRegistry,
-  defaultFormatters
-} from '@uapkg/diagnostics-format'
+import { createFormatterRegistry, defaultFormatters } from '@uapkg/diagnostics-format'
 import type { DiagnosticsReport } from '../contracts/ActionContracts.js'
 import type { ActionLogger } from './ActionLogger.js'
 
@@ -17,10 +14,7 @@ export class DiagnosticReporter {
     const fingerprints = new Set<string>()
 
     for (const diagnostic of diagnostics) {
-      if (
-        diagnostic.emitPolicy === 'once' &&
-        diagnostic.emitFingerprint !== undefined
-      ) {
+      if (diagnostic.emitPolicy === 'once' && diagnostic.emitFingerprint !== undefined) {
         if (fingerprints.has(diagnostic.emitFingerprint)) {
           continue
         }
@@ -66,7 +60,7 @@ export class DiagnosticReporter {
       errors,
       warnings,
       infos,
-      formattedDiagnostics
+      formattedDiagnostics,
     }
   }
 }

@@ -4,11 +4,11 @@ const loggerMethods = {
   info: jest.fn(),
   warn: jest.fn(),
   error: jest.fn(),
-  debug: jest.fn()
+  debug: jest.fn(),
 }
 
 jest.unstable_mockModule('@uapkg/log', () => ({
-  createLogger: jest.fn(() => loggerMethods)
+  createLogger: jest.fn(() => loggerMethods),
 }))
 
 const { UapkgActionLogger } = await import('../src/services/ActionLogger.js')

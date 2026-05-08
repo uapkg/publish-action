@@ -1,7 +1,4 @@
-export type ExistingRequestPolicy =
-  | 'create-new'
-  | 'reuse-existing'
-  | 'fail-if-existing'
+export type ExistingRequestPolicy = 'create-new' | 'reuse-existing' | 'fail-if-existing'
 
 export interface PublishActionInputs {
   readonly token: string

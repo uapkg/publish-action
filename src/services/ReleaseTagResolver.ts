@@ -33,17 +33,15 @@ export class ReleaseTagResolver {
       {
         releaseTagInputProvided: false,
         githubRefType: refType,
-        githubRefName: refName
+        githubRefName: refName,
       },
-      'Set the action input "release-tag" explicitly when running outside release/tag contexts.'
+      'Set the action input "release-tag" explicitly when running outside release/tag contexts.',
     )
 
     return bag.toFailure()
   }
 
-  private async readReleaseTagFromEventPayload(
-    bag: DiagnosticBag
-  ): Promise<string | undefined> {
+  private async readReleaseTagFromEventPayload(bag: DiagnosticBag): Promise<string | undefined> {
     const eventPath = process.env.GITHUB_EVENT_PATH?.trim()
     if (!eventPath) {
       return undefined
@@ -57,7 +55,7 @@ export class ReleaseTagResolver {
       bag.addWarning(
         'PUBLISH_ACTION_EVENT_PAYLOAD_READ_WARNING',
         `Could not read GITHUB_EVENT_PATH "${eventPath}": ${String(error)}.`,
-        { eventPath, reason: String(error) }
+        { eventPath, reason: String(error) },
       )
       return undefined
     }
@@ -70,7 +68,7 @@ export class ReleaseTagResolver {
       bag.addWarning(
         'PUBLISH_ACTION_EVENT_PAYLOAD_PARSE_WARNING',
         `Could not parse GITHUB_EVENT_PATH payload: ${String(error)}.`,
-        { eventPath, reason: String(error) }
+        { eventPath, reason: String(error) },
       )
       return undefined
     }

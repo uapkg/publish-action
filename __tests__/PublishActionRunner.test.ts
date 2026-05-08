@@ -3,8 +3,7 @@ import * as core from '../__fixtures__/core.js'
 
 jest.unstable_mockModule('@actions/core', () => core)
 
-const { PublishActionRunner } =
-  await import('../src/services/PublishActionRunner.js')
+const { PublishActionRunner } = await import('../src/services/PublishActionRunner.js')
 
 type RunnerDiagnostics = readonly {
   level: 'error' | 'warning' | 'info'
@@ -18,8 +17,8 @@ const warningDiagnostics: RunnerDiagnostics = [
     level: 'warning',
     code: 'WARN_ONLY',
     message: 'warning only',
-    data: {}
-  }
+    data: {},
+  },
 ]
 
 const errorDiagnostics: RunnerDiagnostics = [
@@ -27,8 +26,8 @@ const errorDiagnostics: RunnerDiagnostics = [
     level: 'error',
     code: 'FAILURE',
     message: 'failure message',
-    data: {}
-  }
+    data: {},
+  },
 ]
 
 describe('PublishActionRunner', () => {
@@ -36,7 +35,7 @@ describe('PublishActionRunner', () => {
     info: () => undefined,
     warn: () => undefined,
     error: () => undefined,
-    debug: () => undefined
+    debug: () => undefined,
   }
 
   beforeEach(() => {
@@ -53,16 +52,16 @@ describe('PublishActionRunner', () => {
           registryRepo: 'uapkg/registry',
           manifestPath: 'uapkg.json',
           releaseTagInput: undefined,
-          existingRequestPolicy: 'reuse-existing' as const
-        }
-      })
+          existingRequestPolicy: 'reuse-existing' as const,
+        },
+      }),
     }
 
     const releaseTagResolver = {
       resolve: async () => ({
         ok: false as const,
-        diagnostics: warningDiagnostics
-      })
+        diagnostics: warningDiagnostics,
+      }),
     }
 
     const metadataReader = {
@@ -73,9 +72,9 @@ describe('PublishActionRunner', () => {
           packageName: 'my-package',
           packageVersion: '1.2.0',
           packageSource: 'uapkg/source-repo',
-          releaseTag: 'v1.2.0'
-        }
-      })
+          releaseTag: 'v1.2.0',
+        },
+      }),
     }
 
     const repositoryRefParser = {
@@ -85,17 +84,17 @@ describe('PublishActionRunner', () => {
         value: {
           owner: 'uapkg',
           name: 'registry',
-          fullName: 'uapkg/registry'
-        }
-      })
+          fullName: 'uapkg/registry',
+        },
+      }),
     }
 
     const githubClientFactory = {
       create: () => ({
         ok: true as const,
         diagnostics: [],
-        value: {}
-      })
+        value: {},
+      }),
     }
 
     const diagnosticReporter = {
@@ -103,13 +102,13 @@ describe('PublishActionRunner', () => {
         errors: 0,
         warnings: 1,
         infos: 0,
-        formattedDiagnostics: []
-      }))
+        formattedDiagnostics: [],
+      })),
     }
 
     const summaryWriter = {
       writeFailure: jest.fn(async () => undefined),
-      writeSuccess: jest.fn(async () => undefined)
+      writeSuccess: jest.fn(async () => undefined),
     }
 
     const runner = new PublishActionRunner(
@@ -120,7 +119,7 @@ describe('PublishActionRunner', () => {
       repositoryRefParser as never,
       githubClientFactory as never,
       diagnosticReporter as never,
-      summaryWriter as never
+      summaryWriter as never,
     )
 
     await runner.run()
@@ -139,17 +138,17 @@ describe('PublishActionRunner', () => {
           registryRepo: 'uapkg/registry',
           manifestPath: 'uapkg.json',
           releaseTagInput: undefined,
-          existingRequestPolicy: 'reuse-existing' as const
-        }
-      })
+          existingRequestPolicy: 'reuse-existing' as const,
+        },
+      }),
     }
 
     const releaseTagResolver = {
       resolve: async () => ({
         ok: true as const,
         diagnostics: [],
-        value: 'v1.2.0'
-      })
+        value: 'v1.2.0',
+      }),
     }
 
     const metadataReader = {
@@ -160,9 +159,9 @@ describe('PublishActionRunner', () => {
           packageName: 'my-package',
           packageVersion: '1.2.0',
           packageSource: 'invalid source',
-          releaseTag: 'v1.2.0'
-        }
-      })
+          releaseTag: 'v1.2.0',
+        },
+      }),
     }
 
     const repositoryRefParser = {
@@ -170,24 +169,24 @@ describe('PublishActionRunner', () => {
         if (fieldName === 'package-source') {
           return {
             ok: false as const,
-            diagnostics: errorDiagnostics
+            diagnostics: errorDiagnostics,
           }
         }
 
         return {
           ok: true as const,
           diagnostics: [],
-          value: { owner: 'uapkg', name: 'registry', fullName: value }
+          value: { owner: 'uapkg', name: 'registry', fullName: value },
         }
-      }
+      },
     }
 
     const githubClientFactory = {
       create: () => ({
         ok: true as const,
         diagnostics: [],
-        value: {}
-      })
+        value: {},
+      }),
     }
 
     const diagnosticReporter = {
@@ -195,13 +194,13 @@ describe('PublishActionRunner', () => {
         errors: 1,
         warnings: 0,
         infos: 0,
-        formattedDiagnostics: []
-      }))
+        formattedDiagnostics: [],
+      })),
     }
 
     const summaryWriter = {
       writeFailure: jest.fn(async () => undefined),
-      writeSuccess: jest.fn(async () => undefined)
+      writeSuccess: jest.fn(async () => undefined),
     }
 
     const runner = new PublishActionRunner(
@@ -212,7 +211,7 @@ describe('PublishActionRunner', () => {
       repositoryRefParser as never,
       githubClientFactory as never,
       diagnosticReporter as never,
-      summaryWriter as never
+      summaryWriter as never,
     )
 
     await runner.run()
@@ -231,17 +230,17 @@ describe('PublishActionRunner', () => {
           registryRepo: 'bad registry',
           manifestPath: 'uapkg.json',
           releaseTagInput: undefined,
-          existingRequestPolicy: 'reuse-existing' as const
-        }
-      })
+          existingRequestPolicy: 'reuse-existing' as const,
+        },
+      }),
     }
 
     const releaseTagResolver = {
       resolve: async () => ({
         ok: true as const,
         diagnostics: [],
-        value: 'v1.2.0'
-      })
+        value: 'v1.2.0',
+      }),
     }
 
     const metadataReader = {
@@ -252,9 +251,9 @@ describe('PublishActionRunner', () => {
           packageName: 'my-package',
           packageVersion: '1.2.0',
           packageSource: 'uapkg/source-repo',
-          releaseTag: 'v1.2.0'
-        }
-      })
+          releaseTag: 'v1.2.0',
+        },
+      }),
     }
 
     const repositoryRefParser = {
@@ -262,7 +261,7 @@ describe('PublishActionRunner', () => {
         if (fieldName === 'registry-repo') {
           return {
             ok: false as const,
-            diagnostics: errorDiagnostics
+            diagnostics: errorDiagnostics,
           }
         }
 
@@ -272,18 +271,18 @@ describe('PublishActionRunner', () => {
           value: {
             owner: 'uapkg',
             name: 'source-repo',
-            fullName: 'uapkg/source-repo'
-          }
+            fullName: 'uapkg/source-repo',
+          },
         }
-      }
+      },
     }
 
     const githubClientFactory = {
       create: () => ({
         ok: true as const,
         diagnostics: [],
-        value: {}
-      })
+        value: {},
+      }),
     }
 
     const diagnosticReporter = {
@@ -291,13 +290,13 @@ describe('PublishActionRunner', () => {
         errors: 1,
         warnings: 0,
         infos: 0,
-        formattedDiagnostics: []
-      }))
+        formattedDiagnostics: [],
+      })),
     }
 
     const summaryWriter = {
       writeFailure: jest.fn(async () => undefined),
-      writeSuccess: jest.fn(async () => undefined)
+      writeSuccess: jest.fn(async () => undefined),
     }
 
     const runner = new PublishActionRunner(
@@ -308,7 +307,7 @@ describe('PublishActionRunner', () => {
       repositoryRefParser as never,
       githubClientFactory as never,
       diagnosticReporter as never,
-      summaryWriter as never
+      summaryWriter as never,
     )
 
     await runner.run()

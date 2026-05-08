@@ -14,5 +14,5 @@ await build({
   target: 'node24',
   sourcemap: shouldGenerateSourceMap,
   legalComments: 'none',
-  logLevel: 'info'
+  logLevel: 'info',
 })

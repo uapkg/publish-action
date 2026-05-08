@@ -6,7 +6,7 @@ const logger = {
   info: () => undefined,
   warn: () => undefined,
   error: () => undefined,
-  debug: () => undefined
+  debug: () => undefined,
 }
 
 describe('RegistryIssueService', () => {
@@ -35,10 +35,10 @@ describe('RegistryIssueService', () => {
             }
 
             return { data: { login: 'token-user' } }
-          }
+          },
         },
         repos: {
-          getReleaseByTag: async () => ({ data: { assets: [] } })
+          getReleaseByTag: async () => ({ data: { assets: [] } }),
         },
         issues: {
           create: async (params) => {
@@ -50,11 +50,11 @@ describe('RegistryIssueService', () => {
             return {
               data: {
                 number: 42,
-                html_url: 'https://github.com/uapkg/registry/issues/42'
-              }
+                html_url: 'https://github.com/uapkg/registry/issues/42',
+              },
             }
-          }
-        }
+          },
+        },
       },
       search: {
         issuesAndPullRequests: async () => {
@@ -64,11 +64,11 @@ describe('RegistryIssueService', () => {
 
           return {
             data: {
-              items: options?.existingItems ?? []
-            }
+              items: options?.existingItems ?? [],
+            },
           }
-        }
-      }
+        },
+      },
     }
 
     return { api, createCalls }
@@ -78,13 +78,13 @@ describe('RegistryIssueService', () => {
     registryRepo: {
       owner: 'uapkg',
       name: 'registry',
-      fullName: 'uapkg/registry'
+      fullName: 'uapkg/registry',
     },
     existingRequestPolicy: 'reuse-existing' as const,
     packageName: 'my-package',
     packageVersion: '1.2.0',
     packageSource: 'org/repo',
-    releaseTag: 'v1.2.0'
+    releaseTag: 'v1.2.0',
   }
 
   it('reuses an existing issue with reuse-existing policy', async () => {
@@ -93,16 +93,12 @@ describe('RegistryIssueService', () => {
         {
           number: 7,
           html_url: 'https://github.com/uapkg/registry/issues/7',
-          title: '[publish] my-package@1.2.0'
-        }
-      ]
+          title: '[publish] my-package@1.2.0',
+        },
+      ],
     })
 
-    const service = new RegistryIssueService(
-      api,
-      new GitHubApiExecutor(logger),
-      logger
-    )
+    const service = new RegistryIssueService(api, new GitHubApiExecutor(logger), logger)
     const result = await service.createOrReuse(request)
 
     expect(result.ok).toBe(true)
@@ -121,19 +117,15 @@ describe('RegistryIssueService', () => {
         {
           number: 7,
           html_url: 'https://github.com/uapkg/registry/issues/7',
-          title: '[publish] my-package@1.2.0'
-        }
-      ]
+          title: '[publish] my-package@1.2.0',
+        },
+      ],
     })
 
-    const service = new RegistryIssueService(
-      api,
-      new GitHubApiExecutor(logger),
-      logger
-    )
+    const service = new RegistryIssueService(api, new GitHubApiExecutor(logger), logger)
     const result = await service.createOrReuse({
       ...request,
-      existingRequestPolicy: 'fail-if-existing'
+      existingRequestPolicy: 'fail-if-existing',
     })
 
     expect(result.ok).toBe(false)
@@ -145,19 +137,15 @@ describe('RegistryIssueService', () => {
         {
           number: 7,
           html_url: 'https://github.com/uapkg/registry/issues/7',
-          title: '[publish] my-package@1.2.0'
-        }
-      ]
+          title: '[publish] my-package@1.2.0',
+        },
+      ],
     })
 
-    const service = new RegistryIssueService(
-      api,
-      new GitHubApiExecutor(logger),
-      logger
-    )
+    const service = new RegistryIssueService(api, new GitHubApiExecutor(logger), logger)
     const result = await service.createOrReuse({
       ...request,
-      existingRequestPolicy: 'create-new'
+      existingRequestPolicy: 'create-new',
     })
 
     expect(result.ok).toBe(true)
@@ -178,21 +166,17 @@ describe('RegistryIssueService', () => {
         {
           number: 7,
           html_url: 'https://github.com/uapkg/registry/issues/7',
-          title: '[publish] my-package@1.2.0'
+          title: '[publish] my-package@1.2.0',
         },
         {
           number: 8,
           html_url: 'https://github.com/uapkg/registry/issues/8',
-          title: '[publish] my-package@1.2.0'
-        }
-      ]
+          title: '[publish] my-package@1.2.0',
+        },
+      ],
     })
 
-    const service = new RegistryIssueService(
-      api,
-      new GitHubApiExecutor(logger),
-      logger
-    )
+    const service = new RegistryIssueService(api, new GitHubApiExecutor(logger), logger)
 
     const result = await service.createOrReuse(request)
 
@@ -202,26 +186,18 @@ describe('RegistryIssueService', () => {
     }
 
     expect(result.value.issueNumber).toBe(7)
-    expect(
-      result.diagnostics.some(
-        (d) => d.code === 'PUBLISH_ACTION_DUPLICATE_ISSUES_WARNING'
-      )
-    ).toBe(true)
+    expect(result.diagnostics.some((d) => d.code === 'PUBLISH_ACTION_DUPLICATE_ISSUES_WARNING')).toBe(true)
   })
 
   it('fails when authentication lookup fails during existing issue search', async () => {
     const { api } = createApi({
       authError: Object.assign(new Error('unauthorized'), {
         status: 401,
-        response: { headers: {} }
-      })
+        response: { headers: {} },
+      }),
     })
 
-    const service = new RegistryIssueService(
-      api,
-      new GitHubApiExecutor(logger),
-      logger
-    )
+    const service = new RegistryIssueService(api, new GitHubApiExecutor(logger), logger)
 
     const result = await service.createOrReuse(request)
 
@@ -232,19 +208,15 @@ describe('RegistryIssueService', () => {
     const { api } = createApi({
       createError: Object.assign(new Error('not found'), {
         status: 404,
-        response: { headers: {} }
-      })
+        response: { headers: {} },
+      }),
     })
 
-    const service = new RegistryIssueService(
-      api,
-      new GitHubApiExecutor(logger),
-      logger
-    )
+    const service = new RegistryIssueService(api, new GitHubApiExecutor(logger), logger)
 
     const result = await service.createOrReuse({
       ...request,
-      existingRequestPolicy: 'create-new'
+      existingRequestPolicy: 'create-new',
     })
 
     expect(result.ok).toBe(false)

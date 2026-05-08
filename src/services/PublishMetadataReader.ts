@@ -8,13 +8,10 @@ const MANIFEST_FILE_NAME = 'uapkg.json'
 export class PublishMetadataReader {
   constructor(
     private readonly manifestReader = new ManifestReader(),
-    private readonly cwdProvider: () => string = () => process.cwd()
+    private readonly cwdProvider: () => string = () => process.cwd(),
   ) {}
 
-  async read(
-    manifestPath: string,
-    releaseTag: string
-  ): Promise<Result<PublishMetadata>> {
+  async read(manifestPath: string, releaseTag: string): Promise<Result<PublishMetadata>> {
     const bag = new DiagnosticBag()
 
     const absoluteManifestPath = resolve(this.cwdProvider(), manifestPath)
@@ -25,7 +22,7 @@ export class PublishMetadataReader {
         'PUBLISH_ACTION_MANIFEST_NAME_INVALID',
         `Manifest path must reference "${MANIFEST_FILE_NAME}". Received "${manifestPath}".`,
         { manifestPath },
-        'Set "manifest-path" to a path ending in "uapkg.json".'
+        'Set "manifest-path" to a path ending in "uapkg.json".',
       )
       return bag.toFailure()
     }
@@ -44,7 +41,7 @@ export class PublishMetadataReader {
         'PUBLISH_ACTION_SOURCE_MISSING',
         'Environment variable GITHUB_REPOSITORY is required to resolve package source.',
         {},
-        'Run this action within a GitHub repository context.'
+        'Run this action within a GitHub repository context.',
       )
       return bag.toFailure()
     }
@@ -53,7 +50,7 @@ export class PublishMetadataReader {
       packageName: manifestResult.value.name,
       packageVersion: manifestResult.value.version,
       packageSource,
-      releaseTag
+      releaseTag,
     })
   }
 }

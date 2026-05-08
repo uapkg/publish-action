@@ -59713,9 +59713,7 @@ var DiagnosticReporter = class {
 // src/services/JobSummaryWriter.ts
 var JobSummaryWriter = class {
   async writeSuccess(summary2) {
-    const diagnosticsBlock = this.renderDiagnostics(
-      summary2.diagnostics.formattedDiagnostics
-    );
+    const diagnosticsBlock = this.renderDiagnostics(summary2.diagnostics.formattedDiagnostics);
     const markdown = [
       "## UAPKG Publish Action",
       "",
@@ -59740,9 +59738,7 @@ var JobSummaryWriter = class {
     await this.append(markdown);
   }
   async writeFailure(summary2) {
-    const diagnosticsBlock = this.renderDiagnostics(
-      summary2.diagnostics.formattedDiagnostics
-    );
+    const diagnosticsBlock = this.renderDiagnostics(summary2.diagnostics.formattedDiagnostics);
     const markdown = [
       "## UAPKG Publish Action",
       "",
@@ -59800,9 +59796,7 @@ var GitHubApiExecutor = class {
         const requestError = error49;
         const status = requestError.status;
         if (typeof status === "number" && status >= 500 && attempt < MAX_TRANSIENT_RETRIES) {
-          this.logger.warn(
-            `GitHub API call "${operationName}" failed with status ${status}. Retrying once.`
-          );
+          this.logger.warn(`GitHub API call "${operationName}" failed with status ${status}. Retrying once.`);
           continue;
         }
         bag.addError(
@@ -59818,11 +59812,9 @@ var GitHubApiExecutor = class {
         return bag.toFailure();
       }
     }
-    bag.addError(
-      "PUBLISH_ACTION_GITHUB_API_ERROR",
-      `GitHub API call "${operationName}" failed after retry.`,
-      { operationName }
-    );
+    bag.addError("PUBLISH_ACTION_GITHUB_API_ERROR", `GitHub API call "${operationName}" failed after retry.`, {
+      operationName
+    });
     return bag.toFailure();
   }
   getErrorReason(error49) {
@@ -63988,11 +63980,7 @@ var GitHubClientFactory = class {
 var DEFAULT_REGISTRY_REPO = "uapkg/registry";
 var DEFAULT_MANIFEST_PATH = "uapkg.json";
 var DEFAULT_EXISTING_REQUEST_POLICY = "reuse-existing";
-var ALLOWED_POLICIES = /* @__PURE__ */ new Set([
-  "create-new",
-  "reuse-existing",
-  "fail-if-existing"
-]);
+var ALLOWED_POLICIES = /* @__PURE__ */ new Set(["create-new", "reuse-existing", "fail-if-existing"]);
 var PublishActionInputReader = class {
   read() {
     const bag = new DiagnosticBag();
@@ -77984,10 +77972,7 @@ var RegistryIssueService = class {
   logger;
   async createOrReuse(request3) {
     const bag = new DiagnosticBag();
-    const title = this.getIssueTitle(
-      request3.packageName,
-      request3.packageVersion
-    );
+    const title = this.getIssueTitle(request3.packageName, request3.packageVersion);
     const body = this.getIssueBody(
       request3.packageName,
       request3.packageVersion,
@@ -77995,10 +77980,7 @@ var RegistryIssueService = class {
       request3.releaseTag
     );
     if (request3.existingRequestPolicy !== "create-new") {
-      const existingIssueResult = await this.findExistingIssue(
-        request3.registryRepo.fullName,
-        title
-      );
+      const existingIssueResult = await this.findExistingIssue(request3.registryRepo.fullName, title);
       bag.mergeArray(existingIssueResult.diagnostics);
       if (!existingIssueResult.ok) {
         return bag.toFailure();
@@ -78017,9 +77999,7 @@ var RegistryIssueService = class {
           );
           return bag.toFailure();
         }
-        this.logger.info(
-          `Reusing existing publish issue #${existingIssue.number} (${existingIssue.html_url}).`
-        );
+        this.logger.info(`Reusing existing publish issue #${existingIssue.number} (${existingIssue.html_url}).`);
         return bag.toResult({
           issueNumber: existingIssue.number,
           issueUrl: existingIssue.html_url,
@@ -78076,9 +78056,7 @@ var RegistryIssueService = class {
     if (!searchResult.ok) {
       return bag.toFailure();
     }
-    const issuesOnly = searchResult.value.data.items.filter(
-      (item) => item.pull_request === void 0
-    );
+    const issuesOnly = searchResult.value.data.items.filter((item) => item.pull_request === void 0);
     const titleMatches = issuesOnly.filter((item) => item.title === title);
     if (titleMatches.length > 1) {
       bag.addWarning(
@@ -78138,9 +78116,7 @@ var ReleaseAssetVerifier = class {
       `${request3.packageName}.tgz`,
       `${request3.packageName}@${request3.packageVersion}.tgz`
     ]);
-    const matchedAssets = releaseResult.value.data.assets.filter(
-      (asset) => acceptedNames.has(asset.name)
-    );
+    const matchedAssets = releaseResult.value.data.assets.filter((asset) => acceptedNames.has(asset.name));
     if (matchedAssets.length === 0) {
       bag.addError(
         "PUBLISH_ACTION_RELEASE_ASSET_NOT_FOUND",
@@ -78287,57 +78263,40 @@ var PublishActionRunner = class {
     }
     diagnostics.mergeArray(inputResult.diagnostics);
     const actionInputs = inputResult.value;
-    const releaseTagResult = await this.releaseTagResolver.resolve(
-      actionInputs.releaseTagInput
-    );
+    const releaseTagResult = await this.releaseTagResolver.resolve(actionInputs.releaseTagInput);
     diagnostics.mergeArray(releaseTagResult.diagnostics);
     if (!releaseTagResult.ok) {
       await this.finishFailure(diagnostics.all(), actionInputs);
       return;
     }
-    const metadataResult = await this.metadataReader.read(
-      actionInputs.manifestPath,
-      releaseTagResult.value
-    );
+    const metadataResult = await this.metadataReader.read(actionInputs.manifestPath, releaseTagResult.value);
     diagnostics.mergeArray(metadataResult.diagnostics);
     if (!metadataResult.ok) {
       await this.finishFailure(diagnostics.all(), actionInputs);
       return;
     }
     const publishMetadata = metadataResult.value;
-    const githubClientResult = this.githubClientFactory.create(
-      actionInputs.token
-    );
+    const githubClientResult = this.githubClientFactory.create(actionInputs.token);
     diagnostics.mergeArray(githubClientResult.diagnostics);
     if (!githubClientResult.ok) {
       await this.finishFailure(diagnostics.all(), actionInputs, publishMetadata);
       return;
     }
     const githubApi = githubClientResult.value;
-    const sourceRepoResult = this.repositoryRefParser.parse(
-      publishMetadata.packageSource,
-      "package-source"
-    );
+    const sourceRepoResult = this.repositoryRefParser.parse(publishMetadata.packageSource, "package-source");
     diagnostics.mergeArray(sourceRepoResult.diagnostics);
     if (!sourceRepoResult.ok) {
       await this.finishFailure(diagnostics.all(), actionInputs, publishMetadata);
       return;
     }
-    const registryRepoResult = this.repositoryRefParser.parse(
-      actionInputs.registryRepo,
-      "registry-repo"
-    );
+    const registryRepoResult = this.repositoryRefParser.parse(actionInputs.registryRepo, "registry-repo");
     diagnostics.mergeArray(registryRepoResult.diagnostics);
     if (!registryRepoResult.ok) {
       await this.finishFailure(diagnostics.all(), actionInputs, publishMetadata);
       return;
     }
     const apiExecutor = new GitHubApiExecutor(this.logger);
-    const releaseAssetVerifier = new ReleaseAssetVerifier(
-      githubApi,
-      apiExecutor,
-      this.logger
-    );
+    const releaseAssetVerifier = new ReleaseAssetVerifier(githubApi, apiExecutor, this.logger);
     const releaseAssetResult = await releaseAssetVerifier.verify({
       packageSource: sourceRepoResult.value,
       releaseTag: publishMetadata.releaseTag,
@@ -78349,11 +78308,7 @@ var PublishActionRunner = class {
       await this.finishFailure(diagnostics.all(), actionInputs, publishMetadata);
       return;
     }
-    const registryIssueService = new RegistryIssueService(
-      githubApi,
-      apiExecutor,
-      this.logger
-    );
+    const registryIssueService = new RegistryIssueService(githubApi, apiExecutor, this.logger);
     const issueResult = await registryIssueService.createOrReuse({
       registryRepo: registryRepoResult.value,
       existingRequestPolicy: actionInputs.existingRequestPolicy,

@@ -14,7 +14,7 @@ export class GitHubClientFactory {
         'PUBLISH_ACTION_OCTOKIT_INIT_FAILED',
         `Failed to initialize GitHub API client: ${String(error)}.`,
         { reason: String(error) },
-        'Ensure the "token" input is a valid GitHub token.'
+        'Ensure the "token" input is a valid GitHub token.',
       )
       return bag.toFailure()
     }

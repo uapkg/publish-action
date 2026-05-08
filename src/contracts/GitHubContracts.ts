@@ -29,11 +29,7 @@ export interface GitHubApi {
       getAuthenticated(): Promise<{ data: GitHubAuthUser }>
     }
     readonly repos: {
-      getReleaseByTag(params: {
-        owner: string
-        repo: string
-        tag: string
-      }): Promise<{ data: GitHubReleaseResponse }>
+      getReleaseByTag(params: { owner: string; repo: string; tag: string }): Promise<{ data: GitHubReleaseResponse }>
     }
     readonly issues: {
       create(params: {

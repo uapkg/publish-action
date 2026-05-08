@@ -100,3 +100,6 @@ __tests__/runner/*
 # IDE files
 .idea
 *.code-workspace
+
+# Husky runtime helper files generated on install
+.husky/_

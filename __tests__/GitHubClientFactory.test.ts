@@ -9,11 +9,10 @@ class MockOctokit {
 }
 
 jest.unstable_mockModule('@octokit/action', () => ({
-  Octokit: MockOctokit
+  Octokit: MockOctokit,
 }))
 
-const { GitHubClientFactory } =
-  await import('../src/services/GitHubClientFactory.js')
+const { GitHubClientFactory } = await import('../src/services/GitHubClientFactory.js')
 
 describe('GitHubClientFactory', () => {
   beforeEach(() => {
@@ -29,8 +28,7 @@ describe('GitHubClientFactory', () => {
   })
 
   it('returns diagnostics when octokit construction fails', async () => {
-    const { GitHubClientFactory: ThrowingFactory } =
-      await import('../src/services/GitHubClientFactory.js')
+    const { GitHubClientFactory: ThrowingFactory } = await import('../src/services/GitHubClientFactory.js')
 
     octokitConstructor.mockImplementationOnce(() => {
       throw new Error('construction failed')
@@ -44,8 +42,6 @@ describe('GitHubClientFactory', () => {
       return
     }
 
-    expect(result.diagnostics[0]?.code).toBe(
-      'PUBLISH_ACTION_OCTOKIT_INIT_FAILED'
-    )
+    expect(result.diagnostics[0]?.code).toBe('PUBLISH_ACTION_OCTOKIT_INIT_FAILED')
   })
 })

@@ -10,8 +10,7 @@ branding:
 # Define your inputs here.
 inputs:
   token:
-    description:
-      GitHub token used to create issues in the target registry repository
+    description: GitHub token used to create issues in the target registry repository
     required: true
   registry-repo:
     description: Registry repository in owner/name form

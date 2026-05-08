@@ -43,7 +43,7 @@ const getAuthenticated = jest.fn(async () => {
   }
 
   return {
-    data: { login: state.authenticatedLogin }
+    data: { login: state.authenticatedLogin },
   }
 })
 
@@ -54,7 +54,7 @@ const getReleaseByTag = jest.fn(async () => {
   }
 
   return {
-    data: { assets: state.releaseAssets }
+    data: { assets: state.releaseAssets },
   }
 })
 
@@ -74,7 +74,7 @@ const searchIssuesAndPullRequests = jest.fn(async () => {
   }
 
   return {
-    data: { items: state.existingIssues }
+    data: { items: state.existingIssues },
   }
 })
 
@@ -86,43 +86,39 @@ let state: MockState = {
     value: {
       name: 'my-package',
       version: '1.2.0',
-      kind: 'plugin'
+      kind: 'plugin',
     },
-    diagnostics: []
+    diagnostics: [],
   },
   releaseAssets: [{ id: 1, name: 'my-package@1.2.0.tgz' }],
   existingIssues: [],
   authenticatedLogin: 'token-user',
   createdIssue: {
     number: 42,
-    html_url: 'https://github.com/uapkg/registry/issues/42'
+    html_url: 'https://github.com/uapkg/registry/issues/42',
   },
   authErrors: [],
   releaseByTagErrors: [],
   searchErrors: [],
-  createIssueErrors: []
+  createIssueErrors: [],
 }
 
-function createRequestError(
-  status: number,
-  message: string,
-  rateLimitRemaining?: string
-): MockRequestError {
+function createRequestError(status: number, message: string, rateLimitRemaining?: string): MockRequestError {
   if (rateLimitRemaining !== undefined) {
     return {
       status,
       message,
       response: {
         headers: {
-          'x-ratelimit-remaining': rateLimitRemaining
-        }
-      }
+          'x-ratelimit-remaining': rateLimitRemaining,
+        },
+      },
     }
   }
 
   return {
     status,
-    message
+    message,
   }
 }
 
@@ -135,18 +131,18 @@ class MockManifestReader {
 class MockOctokit {
   readonly rest = {
     users: {
-      getAuthenticated
+      getAuthenticated,
     },
     repos: {
-      getReleaseByTag
+      getReleaseByTag,
     },
     issues: {
-      create: createIssue
-    }
+      create: createIssue,
+    },
   }
 
   readonly search = {
-    issuesAndPullRequests: searchIssuesAndPullRequests
+    issuesAndPullRequests: searchIssuesAndPullRequests,
   }
 
   constructor(options: { auth?: string }) {
@@ -156,10 +152,10 @@ class MockOctokit {
 
 jest.unstable_mockModule('@actions/core', () => core)
 jest.unstable_mockModule('@uapkg/package-manifest', () => ({
-  ManifestReader: MockManifestReader
+  ManifestReader: MockManifestReader,
 }))
 jest.unstable_mockModule('@octokit/action', () => ({
-  Octokit: MockOctokit
+  Octokit: MockOctokit,
 }))
 jest.unstable_mockModule('@uapkg/log', () => ({
   __esModule: true,
@@ -167,15 +163,15 @@ jest.unstable_mockModule('@uapkg/log', () => ({
     info: () => undefined,
     warn: () => undefined,
     error: () => undefined,
-    debug: () => undefined
+    debug: () => undefined,
   }),
   configureLogger: () => undefined,
   default: {
     info: () => undefined,
     warn: () => undefined,
     error: () => undefined,
-    debug: () => undefined
-  }
+    debug: () => undefined,
+  },
 }))
 
 const { run } = await import('../src/main.js')
@@ -185,9 +181,7 @@ describe('publish action e2e', () => {
 
   const summary = core.summary as unknown as {
     addRaw: jest.MockedFunction<(message: string) => typeof core.summary>
-    write: jest.MockedFunction<
-      (options?: { overwrite?: boolean }) => Promise<void>
-    >
+    write: jest.MockedFunction<(options?: { overwrite?: boolean }) => Promise<void>>
   }
 
   const inputValues: Record<string, string> = {
@@ -195,7 +189,7 @@ describe('publish action e2e', () => {
     'registry-repo': 'uapkg/registry',
     'manifest-path': 'uapkg.json',
     'release-tag': '',
-    'existing-request-policy': 'reuse-existing'
+    'existing-request-policy': 'reuse-existing',
   }
 
   beforeEach(() => {
@@ -210,21 +204,21 @@ describe('publish action e2e', () => {
         value: {
           name: 'my-package',
           version: '1.2.0',
-          kind: 'plugin'
+          kind: 'plugin',
         },
-        diagnostics: []
+        diagnostics: [],
       },
       releaseAssets: [{ id: 1, name: 'my-package@1.2.0.tgz' }],
       existingIssues: [],
       authenticatedLogin: 'token-user',
       createdIssue: {
         number: 42,
-        html_url: 'https://github.com/uapkg/registry/issues/42'
+        html_url: 'https://github.com/uapkg/registry/issues/42',
       },
       authErrors: [],
       releaseByTagErrors: [],
       searchErrors: [],
-      createIssueErrors: []
+      createIssueErrors: [],
     }
 
     inputValues.token = 'token-value'
@@ -253,28 +247,20 @@ describe('publish action e2e', () => {
     expect(getReleaseByTag).toHaveBeenCalledWith({
       owner: 'uapkg',
       repo: 'source-repo',
-      tag: 'v1.2.0'
+      tag: 'v1.2.0',
     })
     expect(searchIssuesAndPullRequests).toHaveBeenCalledTimes(1)
     expect(createIssue).toHaveBeenCalledTimes(1)
 
     expect(core.setOutput).toHaveBeenCalledWith('issue-number', 42)
-    expect(core.setOutput).toHaveBeenCalledWith(
-      'issue-url',
-      'https://github.com/uapkg/registry/issues/42'
-    )
+    expect(core.setOutput).toHaveBeenCalledWith('issue-url', 'https://github.com/uapkg/registry/issues/42')
     expect(core.setOutput).toHaveBeenCalledWith('issue-state', 'created')
     expect(core.setOutput).toHaveBeenCalledWith('package-name', 'my-package')
     expect(core.setOutput).toHaveBeenCalledWith('package-version', '1.2.0')
-    expect(core.setOutput).toHaveBeenCalledWith(
-      'package-source',
-      'uapkg/source-repo'
-    )
+    expect(core.setOutput).toHaveBeenCalledWith('package-source', 'uapkg/source-repo')
     expect(core.setOutput).toHaveBeenCalledWith('release-tag', 'v1.2.0')
 
-    expect(summary.addRaw).toHaveBeenCalledWith(
-      expect.stringContaining('- Status: success')
-    )
+    expect(summary.addRaw).toHaveBeenCalledWith(expect.stringContaining('- Status: success'))
     expect(summary.write).toHaveBeenCalledWith({ overwrite: false })
   })
 
@@ -285,9 +271,9 @@ describe('publish action e2e', () => {
         {
           number: 7,
           html_url: 'https://github.com/uapkg/registry/issues/7',
-          title: '[publish] my-package@1.2.0'
-        }
-      ]
+          title: '[publish] my-package@1.2.0',
+        },
+      ],
     }
 
     await run()
@@ -303,19 +289,15 @@ describe('publish action e2e', () => {
       ...state,
       releaseAssets: [
         { id: 1, name: 'package.tgz' },
-        { id: 2, name: 'my-package@1.2.0.tgz' }
-      ]
+        { id: 2, name: 'my-package@1.2.0.tgz' },
+      ],
     }
 
     await run()
 
     expect(createIssue).not.toHaveBeenCalled()
-    expect(core.setFailed).toHaveBeenCalledWith(
-      expect.stringContaining('publishable assets found')
-    )
-    expect(summary.addRaw).toHaveBeenCalledWith(
-      expect.stringContaining('- Status: failed')
-    )
+    expect(core.setFailed).toHaveBeenCalledWith(expect.stringContaining('publishable assets found'))
+    expect(summary.addRaw).toHaveBeenCalledWith(expect.stringContaining('- Status: failed'))
   })
 
   it('fails when policy is fail-if-existing and issue already exists', async () => {
@@ -326,80 +308,68 @@ describe('publish action e2e', () => {
         {
           number: 7,
           html_url: 'https://github.com/uapkg/registry/issues/7',
-          title: '[publish] my-package@1.2.0'
-        }
-      ]
+          title: '[publish] my-package@1.2.0',
+        },
+      ],
     }
 
     await run()
 
     expect(createIssue).not.toHaveBeenCalled()
-    expect(core.setFailed).toHaveBeenCalledWith(
-      expect.stringContaining('Existing publish request found')
-    )
+    expect(core.setFailed).toHaveBeenCalledWith(expect.stringContaining('Existing publish request found'))
   })
 
   it('maps 401 API failures to invalid token messaging', async () => {
     state = {
       ...state,
-      releaseByTagErrors: [createRequestError(401, 'Bad credentials')]
+      releaseByTagErrors: [createRequestError(401, 'Bad credentials')],
     }
 
     await run()
 
-    expect(core.setFailed).toHaveBeenCalledWith(
-      expect.stringContaining('token is invalid or expired')
-    )
+    expect(core.setFailed).toHaveBeenCalledWith(expect.stringContaining('token is invalid or expired'))
     expect(createIssue).not.toHaveBeenCalled()
   })
 
   it('maps 403 rate-limit failures to rate-limit messaging', async () => {
     state = {
       ...state,
-      releaseByTagErrors: [
-        createRequestError(403, 'API rate limit exceeded', '0')
-      ]
+      releaseByTagErrors: [createRequestError(403, 'API rate limit exceeded', '0')],
     }
 
     await run()
 
-    expect(core.setFailed).toHaveBeenCalledWith(
-      expect.stringContaining('token rate limit is exhausted')
-    )
+    expect(core.setFailed).toHaveBeenCalledWith(expect.stringContaining('token rate limit is exhausted'))
   })
 
   it('maps 403 permission failures to permission messaging', async () => {
     state = {
       ...state,
-      releaseByTagErrors: [
-        createRequestError(403, 'Resource not accessible by integration', '10')
-      ]
+      releaseByTagErrors: [createRequestError(403, 'Resource not accessible by integration', '10')],
     }
 
     await run()
 
-    expect(core.setFailed).toHaveBeenCalledWith(
-      expect.stringContaining('token lacks required permissions')
-    )
+    expect(core.setFailed).toHaveBeenCalledWith(expect.stringContaining('token lacks required permissions'))
   })
 
   it('maps 404 API failures to not-found messaging', async () => {
     state = {
       ...state,
-      createIssueErrors: [createRequestError(404, 'Not Found')]
+      createIssueErrors: [createRequestError(404, 'Not Found')],
     }
 
     await run()
 
     expect(core.setFailed).toHaveBeenCalledWith(
-      expect.stringContaining('repository/resource not found or inaccessible')
+      expect.stringContaining('repository/resource not found or inaccessible'),
     )
   })
 
   it('retries one transient 5xx failure and then succeeds', async () => {
     state = {
       ...state,
-      releaseByTagErrors: [createRequestError(500, 'Internal Server Error')]
+      releaseByTagErrors: [createRequestError(500, 'Internal Server Error')],
     }
 
     await run()

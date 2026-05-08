@@ -3,8 +3,7 @@ import * as core from '../__fixtures__/core.js'
 
 jest.unstable_mockModule('@actions/core', () => core)
 
-const { PublishActionInputReader } =
-  await import('../src/services/PublishActionInputReader.js')
+const { PublishActionInputReader } = await import('../src/services/PublishActionInputReader.js')
 
 describe('PublishActionInputReader', () => {
   const defaults = {
@@ -12,13 +11,11 @@ describe('PublishActionInputReader', () => {
     'registry-repo': '',
     'manifest-path': '',
     'release-tag': '',
-    'existing-request-policy': ''
+    'existing-request-policy': '',
   } as const
 
   beforeEach(() => {
-    core.getInput.mockImplementation(
-      (name: string) => defaults[name as keyof typeof defaults] ?? ''
-    )
+    core.getInput.mockImplementation((name: string) => defaults[name as keyof typeof defaults] ?? '')
   })
 
   afterEach(() => {

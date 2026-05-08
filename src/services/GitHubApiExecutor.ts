@@ -14,10 +14,7 @@ const MAX_TRANSIENT_RETRIES = 1
 export class GitHubApiExecutor {
   constructor(private readonly logger: ActionLogger) {}
 
-  async execute<T>(
-    operationName: string,
-    operation: () => Promise<T>
-  ): Promise<Result<T>> {
+  async execute<T>(operationName: string, operation: () => Promise<T>): Promise<Result<T>> {
     const bag = new DiagnosticBag()
 
     for (let attempt = 0; attempt <= MAX_TRANSIENT_RETRIES; attempt += 1) {
@@ -28,14 +25,8 @@ export class GitHubApiExecutor {
         const requestError = error as RequestErrorLike
         const status = requestError.status
 
-        if (
-          typeof status === 'number' &&
-          status >= 500 &&
-          attempt < MAX_TRANSIENT_RETRIES
-        ) {
-          this.logger.warn(
-            `GitHub API call "${operationName}" failed with status ${status}. Retrying once.`
-          )
+        if (typeof status === 'number' && status >= 500 && attempt < MAX_TRANSIENT_RETRIES) {
+          this.logger.warn(`GitHub API call "${operationName}" failed with status ${status}. Retrying once.`)
           continue
         }
 
@@ -45,20 +36,18 @@ export class GitHubApiExecutor {
           {
             operationName,
             status,
-            reason: this.getErrorReason(requestError)
+            reason: this.getErrorReason(requestError),
           },
-          this.toHint(requestError)
+          this.toHint(requestError),
         )
 
         return bag.toFailure()
       }
     }
 
-    bag.addError(
-      'PUBLISH_ACTION_GITHUB_API_ERROR',
-      `GitHub API call "${operationName}" failed after retry.`,
-      { operationName }
-    )
+    bag.addError('PUBLISH_ACTION_GITHUB_API_ERROR', `GitHub API call "${operationName}" failed after retry.`, {
+      operationName,
+    })
     return bag.toFailure()
   }
 

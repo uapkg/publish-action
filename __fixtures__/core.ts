@@ -11,7 +11,7 @@ export const warning = jest.fn<typeof core.warning>()
 
 const summaryBuilder = {
   addRaw: jest.fn(),
-  write: jest.fn()
+  write: jest.fn(),
 }
 
 summaryBuilder.addRaw.mockReturnValue(summaryBuilder)

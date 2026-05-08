@@ -6,7 +6,7 @@ describe('GitHubApiExecutor', () => {
     info: () => undefined,
     warn: jest.fn(),
     error: () => undefined,
-    debug: () => undefined
+    debug: () => undefined,
   }
 
   beforeEach(() => {
@@ -28,9 +28,7 @@ describe('GitHubApiExecutor', () => {
 
     expect(result.ok).toBe(true)
     expect(attempt).toBe(2)
-    expect(logger.warn).toHaveBeenCalledWith(
-      expect.stringContaining('Retrying once')
-    )
+    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('Retrying once'))
   })
 
   it('maps status-specific failures to clear diagnostics', async () => {
@@ -40,23 +38,23 @@ describe('GitHubApiExecutor', () => {
       {
         status: 401,
         message: 'Bad credentials',
-        expectedText: 'invalid or expired'
+        expectedText: 'invalid or expired',
       },
       {
         status: 403,
         message: 'Forbidden',
-        expectedText: 'lacks required permissions'
+        expectedText: 'lacks required permissions',
       },
       {
         status: 404,
         message: 'Not Found',
-        expectedText: 'not found or inaccessible'
+        expectedText: 'not found or inaccessible',
       },
       {
         status: 418,
         message: 'Teapot',
-        expectedText: 'status 418'
-      }
+        expectedText: 'status 418',
+      },
     ] as const
 
     for (const statusCase of statuses) {
@@ -76,42 +74,30 @@ describe('GitHubApiExecutor', () => {
   it('maps 403 rate limit exhaustion and unknown errors', async () => {
     const executor = new GitHubApiExecutor(logger)
 
-    const rateLimitedResult = await executor.execute(
-      'rate limited call',
-      async () => {
-        throw {
-          status: 403,
-          message: 'API rate limit exceeded',
-          response: {
-            headers: {
-              'x-ratelimit-remaining': '0'
-            }
-          }
-        }
+    const rateLimitedResult = await executor.execute('rate limited call', async () => {
+      throw {
+        status: 403,
+        message: 'API rate limit exceeded',
+        response: {
+          headers: {
+            'x-ratelimit-remaining': '0',
+          },
+        },
       }
-    )
+    })
 
     expect(rateLimitedResult.ok).toBe(false)
-    const rateLimitedDiagnostic = rateLimitedResult.ok
-      ? undefined
-      : rateLimitedResult.diagnostics[0]
+    const rateLimitedDiagnostic = rateLimitedResult.ok ? undefined : rateLimitedResult.diagnostics[0]
     expect(rateLimitedDiagnostic?.message).toContain('rate limit is exhausted')
     expect(rateLimitedDiagnostic?.hint).toContain('rate limit to reset')
 
-    const unknownResult = await executor.execute(
-      'unknown failure',
-      async () => {
-        throw new Error('network closed')
-      }
-    )
+    const unknownResult = await executor.execute('unknown failure', async () => {
+      throw new Error('network closed')
+    })
 
     expect(unknownResult.ok).toBe(false)
-    const unknownDiagnostic = unknownResult.ok
-      ? undefined
-      : unknownResult.diagnostics[0]
-    expect(unknownDiagnostic?.message).toContain(
-      'GitHub API call "unknown failure" failed'
-    )
+    const unknownDiagnostic = unknownResult.ok ? undefined : unknownResult.diagnostics[0]
+    expect(unknownDiagnostic?.message).toContain('GitHub API call "unknown failure" failed')
     expect(unknownDiagnostic?.hint).toContain('GitHub API availability')
   })
 
@@ -127,11 +113,7 @@ describe('GitHubApiExecutor', () => {
       return
     }
 
-    expect(result.diagnostics[0]?.message).toContain(
-      'transient GitHub API failure'
-    )
-    expect(result.diagnostics[0]?.hint).toContain(
-      'GitHub is experiencing transient failures'
-    )
+    expect(result.diagnostics[0]?.message).toContain('transient GitHub API failure')
+    expect(result.diagnostics[0]?.hint).toContain('GitHub is experiencing transient failures')
   })
 })

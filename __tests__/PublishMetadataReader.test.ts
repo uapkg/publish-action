@@ -25,9 +25,9 @@ describe('PublishMetadataReader', () => {
         JSON.stringify({
           name: 'my-package',
           version: '1.2.0',
-          kind: 'plugin'
+          kind: 'plugin',
         }),
-        'utf8'
+        'utf8',
       )
 
       const reader = new PublishMetadataReader(undefined, () => directory)
@@ -67,14 +67,14 @@ describe('PublishMetadataReader', () => {
                 message: 'Manifest read failed',
                 data: {
                   filePath: 'uapkg.json',
-                  reason: 'missing file'
-                }
-              }
-            ]
+                  reason: 'missing file',
+                },
+              },
+            ],
           }
-        }
+        },
       } as never,
-      () => process.cwd()
+      () => process.cwd(),
     )
 
     const result = await reader.read('uapkg.json', 'v1.0.0')
@@ -93,13 +93,13 @@ describe('PublishMetadataReader', () => {
             value: {
               name: 'my-package',
               version: '1.2.0',
-              kind: 'plugin' as const
+              kind: 'plugin' as const,
             },
-            diagnostics: []
+            diagnostics: [],
           }
-        }
+        },
       } as never,
-      () => process.cwd()
+      () => process.cwd(),
     )
 
     const result = await reader.read('uapkg.json', 'v1.0.0')

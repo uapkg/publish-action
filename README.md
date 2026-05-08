@@ -173,6 +173,38 @@ Run tests:
 npm run test
 ```
 
+Lint the repository:
+
+```bash
+npm run lint
+```
+
+Fix lint issues where possible:
+
+```bash
+npm run lint:fix
+```
+
+Check formatting:
+
+```bash
+npm run format:check
+```
+
+Write formatting fixes:
+
+```bash
+npm run format:write
+```
+
+Linting and formatting stack:
+
+- Biome for JavaScript, TypeScript, JSON, and related files.
+- `actionlint` for GitHub Actions workflows.
+- Prettier with default settings for YAML (`*.yml`, `*.yaml`).
+
+Husky pre-commit hook runs `npm run lint` locally.
+
 Bundle the action:
 
 ```bash

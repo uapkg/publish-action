@@ -13,7 +13,7 @@ describe('RepositoryRefParser', () => {
     expect(result.value).toEqual({
       owner: 'uapkg',
       name: 'registry',
-      fullName: 'uapkg/registry'
+      fullName: 'uapkg/registry',
     })
   })
 

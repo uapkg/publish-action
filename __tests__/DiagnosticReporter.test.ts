@@ -3,15 +3,14 @@ import * as core from '../__fixtures__/core.js'
 
 jest.unstable_mockModule('@actions/core', () => core)
 
-const { DiagnosticReporter } =
-  await import('../src/services/DiagnosticReporter.js')
+const { DiagnosticReporter } = await import('../src/services/DiagnosticReporter.js')
 
 describe('DiagnosticReporter', () => {
   const logger = {
     info: jest.fn(),
     warn: jest.fn(),
     error: jest.fn(),
-    debug: jest.fn()
+    debug: jest.fn(),
   }
 
   beforeEach(() => {
@@ -27,7 +26,7 @@ describe('DiagnosticReporter', () => {
         code: 'UNKNOWN_ERROR',
         message: 'Hard failure',
         hint: 'Check logs',
-        data: { reason: 'bad input' }
+        data: { reason: 'bad input' },
       },
       {
         level: 'warning',
@@ -36,14 +35,14 @@ describe('DiagnosticReporter', () => {
         hint: 'Remove key',
         data: {
           path: 'foo',
-          source: 'manifest'
-        }
+          source: 'manifest',
+        },
       },
       {
         level: 'info',
         code: 'DEPENDENCY_NOT_FOUND',
         message: 'Dependency not declared',
-        data: { packageName: 'pkg' }
+        data: { packageName: 'pkg' },
       },
       {
         level: 'warning',
@@ -51,10 +50,10 @@ describe('DiagnosticReporter', () => {
         message: 'Duplicate warning',
         data: {
           path: 'foo',
-          source: 'manifest'
+          source: 'manifest',
         },
         emitPolicy: 'once',
-        emitFingerprint: 'same-warning-fingerprint'
+        emitFingerprint: 'same-warning-fingerprint',
       },
       {
         level: 'warning',
@@ -62,11 +61,11 @@ describe('DiagnosticReporter', () => {
         message: 'Duplicate warning',
         data: {
           path: 'foo',
-          source: 'manifest'
+          source: 'manifest',
         },
         emitPolicy: 'once',
-        emitFingerprint: 'same-warning-fingerprint'
-      }
+        emitFingerprint: 'same-warning-fingerprint',
+      },
     ] as const
 
     const report = reporter.report(diagnostics)
@@ -80,15 +79,9 @@ describe('DiagnosticReporter', () => {
     expect(core.warning).toHaveBeenCalledTimes(2)
     expect(core.info).toHaveBeenCalledTimes(1)
 
-    expect(logger.error).toHaveBeenCalledWith(
-      'Collected 1 error diagnostic(s).'
-    )
-    expect(logger.warn).toHaveBeenCalledWith(
-      'Collected 2 warning diagnostic(s).'
-    )
-    expect(logger.info).toHaveBeenCalledWith(
-      'Collected 1 informational diagnostic(s).'
-    )
+    expect(logger.error).toHaveBeenCalledWith('Collected 1 error diagnostic(s).')
+    expect(logger.warn).toHaveBeenCalledWith('Collected 2 warning diagnostic(s).')
+    expect(logger.info).toHaveBeenCalledWith('Collected 1 informational diagnostic(s).')
   })
 
   it('returns an empty report when no diagnostics were produced', () => {
@@ -99,7 +92,7 @@ describe('DiagnosticReporter', () => {
       errors: 0,
       warnings: 0,
       infos: 0,
-      formattedDiagnostics: []
+      formattedDiagnostics: [],
     })
 
     expect(core.error).not.toHaveBeenCalled()
