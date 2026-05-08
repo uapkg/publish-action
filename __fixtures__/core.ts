@@ -8,3 +8,13 @@ export const getInput = jest.fn<typeof core.getInput>()
 export const setOutput = jest.fn<typeof core.setOutput>()
 export const setFailed = jest.fn<typeof core.setFailed>()
 export const warning = jest.fn<typeof core.warning>()
+
+const summaryBuilder = {
+  addRaw: jest.fn(),
+  write: jest.fn()
+}
+
+summaryBuilder.addRaw.mockReturnValue(summaryBuilder)
+summaryBuilder.write.mockResolvedValue(undefined)
+
+export const summary = summaryBuilder as unknown as typeof core.summary

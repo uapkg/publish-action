@@ -1,27 +1,30 @@
 import * as core from '@actions/core'
-import { wait } from './wait.js'
+import { createUnknownErrorDiagnostic, DiagnosticBag } from '@uapkg/diagnostics'
+import { UapkgActionLogger } from './services/ActionLogger.js'
+import { DiagnosticReporter } from './services/DiagnosticReporter.js'
+import { JobSummaryWriter } from './services/JobSummaryWriter.js'
+import { PublishActionRunner } from './services/PublishActionRunner.js'
 
 /**
- * The main function for the action.
- *
- * @returns Resolves when the action is complete.
+ * Entry point for the publish action runtime.
  */
 export async function run(): Promise<void> {
+  const logger = new UapkgActionLogger()
+  const runner = new PublishActionRunner(logger)
+
   try {
-    const ms: string = core.getInput('milliseconds')
-
-    // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
-    core.debug(`Waiting ${ms} milliseconds ...`)
-
-    // Log the current timestamp, wait, then log the new timestamp
-    core.debug(new Date().toTimeString())
-    await wait(parseInt(ms, 10))
-    core.debug(new Date().toTimeString())
-
-    // Set outputs for other workflow steps to use
-    core.setOutput('time', new Date().toTimeString())
+    await runner.run()
   } catch (error) {
-    // Fail the workflow run if an error occurs
-    if (error instanceof Error) core.setFailed(error.message)
+    const message = error instanceof Error ? error.message : String(error)
+    const bag = new DiagnosticBag()
+    bag.add(createUnknownErrorDiagnostic(message))
+
+    const reporter = new DiagnosticReporter(logger)
+    const report = reporter.report(bag.all())
+
+    const summaryWriter = new JobSummaryWriter()
+    await summaryWriter.writeFailure({ diagnostics: report })
+
+    core.setFailed(message)
   }
 }

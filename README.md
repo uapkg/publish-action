@@ -1,305 +1,183 @@
-# Create a GitHub Action Using TypeScript
+# @uapkg/publish-action
 
-![Linter](https://github.com/actions/typescript-action/actions/workflows/linter.yml/badge.svg)
-![CI](https://github.com/actions/typescript-action/actions/workflows/ci.yml/badge.svg)
-![Check dist/](https://github.com/actions/typescript-action/actions/workflows/check-dist.yml/badge.svg)
-![CodeQL](https://github.com/actions/typescript-action/actions/workflows/codeql-analysis.yml/badge.svg)
-![Coverage](./badges/coverage.svg)
+TypeScript GitHub Action that submits a UAPKG publish request to a registry
+repository by creating or reusing a GitHub issue.
 
-Use this template to bootstrap the creation of a TypeScript action. :rocket:
+This action does not publish packages directly.
 
-This template includes compilation support, tests, a validation workflow,
-publishing, and versioning guidance.
+## Scope
 
-If you are new, there's also a simpler introduction in the
-[Hello world JavaScript action repository](https://github.com/actions/hello-world-javascript-action).
+This action is only responsible for:
 
-## Create Your Own Action
+1. Reading publish metadata from `uapkg.json`.
+2. Resolving the release tag/ref.
+3. Verifying exactly one publishable release asset exists.
+4. Creating or reusing a registry issue.
+5. Returning issue details as outputs.
 
-To create your own action, you can use this repository as a template! Just
-follow the below instructions:
+The registry bot owns validation and actual publishing.
 
-1. Click the **Use this template** button at the top of the repository
-1. Select **Create a new repository**
-1. Select an owner and name for your new repository
-1. Click **Create repository**
-1. Clone your new repository
+## Inputs
 
-> [!IMPORTANT]
->
-> Make sure to remove or update the [`CODEOWNERS`](./CODEOWNERS) file! For
-> details on how to use this file, see
-> [About code owners](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners).
+### `token`
 
-## Initial Setup
+- Required: `true`
+- GitHub token used to search/create issues in the target registry repository.
 
-After you've cloned the repository to your local machine or codespace, you'll
-need to perform some initial setup steps before you can develop your action.
+### `registry-repo`
 
-> [!NOTE]
->
-> You'll need to have a reasonably modern version of
-> [Node.js](https://nodejs.org) handy (20.x or later should work!). If you are
-> using a version manager like [`nodenv`](https://github.com/nodenv/nodenv) or
-> [`fnm`](https://github.com/Schniz/fnm), this template has a `.node-version`
-> file at the root of the repository that can be used to automatically switch to
-> the correct version when you `cd` into the repository. Additionally, this
-> `.node-version` file is used by GitHub Actions in any `actions/setup-node`
-> actions.
+- Required: `false`
+- Default: `uapkg/registry`
+- Target registry repository in `owner/name` form.
 
-1. :hammer_and_wrench: Install the dependencies
+### `manifest-path`
 
-   ```bash
-   npm install
-   ```
+- Required: `false`
+- Default: `uapkg.json`
+- Path to the package manifest.
 
-1. :building_construction: Package the TypeScript for distribution
+### `release-tag`
 
-   ```bash
-   npm run bundle
-   ```
+- Required: `false`
+- Explicit release tag/ref to publish.
 
-1. :white_check_mark: Run the tests
+Release resolution order:
 
-   ```bash
-   $ npm test
+1. Explicit `release-tag`
+2. `github.event.release.tag_name`
+3. `github.ref_name` when `github.ref_type == tag`
+4. Fail
 
-   PASS  ./index.test.js
-     ✓ throws invalid number (3ms)
-     ✓ wait 500 ms (504ms)
-     ✓ test runs (95ms)
+### `existing-request-policy`
 
-   ...
-   ```
+- Required: `false`
+- Default: `reuse-existing`
+- Allowed values:
+  - `create-new`
+  - `reuse-existing`
+  - `fail-if-existing`
 
-## Update the Action Metadata
+Behavior:
 
-The [`action.yml`](action.yml) file defines metadata about your action, such as
-input(s) and output(s). For details about this file, see
-[Metadata syntax for GitHub Actions](https://docs.github.com/en/actions/creating-actions/metadata-syntax-for-github-actions).
+- `create-new`: always create a new issue.
+- `reuse-existing`: find an open matching issue by token user; reuse if found,
+  otherwise create.
+- `fail-if-existing`: same lookup as `reuse-existing`, but fail if found.
 
-When you copy this repository, update `action.yml` with the name, description,
-inputs, and outputs for your action.
+## Outputs
 
-## Update the Action Code
+- `issue-number`: registry issue number
+- `issue-url`: registry issue URL
+- `issue-state`: `created` or `existing`
+- `package-name`: package name from `uapkg.json`
+- `package-version`: package version from `uapkg.json`
+- `package-source`: package source in `owner/repo` form (from
+  `GITHUB_REPOSITORY`)
+- `release-tag`: resolved release tag/ref
 
-The [`src/`](./src/) directory is the heart of your action! This contains the
-source code that will be run when your action is invoked. You can replace the
-contents of this directory with your own code.
+## Release Asset Discovery
 
-There are a few things to keep in mind when writing your action code:
+Before creating or reusing a publish request, the action checks release assets
+for the resolved release tag in the source repository.
 
-- Most GitHub Actions toolkit and CI/CD operations are processed asynchronously.
-  In `main.ts`, you will see that the action is run in an `async` function.
+Accepted asset names:
 
-  ```javascript
-  import * as core from '@actions/core'
-  //...
+- `package.tgz`
+- `<package-name>.tgz`
+- `<package-name>@<package-version>.tgz`
 
-  async function run() {
-    try {
-      //...
-    } catch (error) {
-      core.setFailed(error.message)
-    }
-  }
-  ```
+Rules:
 
-  For more information about the GitHub Actions toolkit, see the
-  [documentation](https://github.com/actions/toolkit/blob/main/README.md).
+- No matching asset: fail.
+- More than one matching asset: fail (ambiguous).
+- Asset content is not downloaded or validated.
 
-So, what are you waiting for? Go ahead and start customizing your action!
+## Issue Identity
 
-1. Create a new branch
+Canonical issue title:
 
-   ```bash
-   git checkout -b releases/v1
-   ```
+`[publish] <package-name>@<package-version>`
 
-1. Replace the contents of `src/` with your action code
-1. Add tests to `__tests__/` for your source code
-1. Format, test, and build the action
+Issue body:
 
-   ```bash
-   npm run all
-   ```
+```md
+### Package Name
 
-   > This step is important! It will run [`rollup`](https://rollupjs.org/) to
-   > build the final JavaScript action code with all dependencies included. If
-   > you do not run this step, your action will not work correctly when it is
-   > used in a workflow.
+my-package
 
-1. (Optional) Test your action locally
+### Version
 
-   The [`@github/local-action`](https://github.com/github/local-action) utility
-   can be used to test your action locally. It is a simple command-line tool
-   that "stubs" (or simulates) the GitHub Actions Toolkit. This way, you can run
-   your TypeScript action locally without having to commit and push your changes
-   to a repository.
+1.2.0
 
-   The `local-action` utility can be run in the following ways:
-   - Visual Studio Code Debugger
+### Source
 
-     Make sure to review and, if needed, update
-     [`.vscode/launch.json`](./.vscode/launch.json)
+org/repo
 
-   - Terminal/Command Prompt
+### Ref
 
-     ```bash
-     # npx @github/local action <action-yaml-path> <entrypoint> <dotenv-file>
-     npx @github/local-action . src/main.ts .env
-     ```
+v1.2.0
+```
 
-   You can provide a `.env` file to the `local-action` CLI to set environment
-   variables used by the GitHub Actions Toolkit. For example, setting inputs and
-   event payload data used by your action. For more information, see the example
-   file, [`.env.example`](./.env.example), and the
-   [GitHub Actions Documentation](https://docs.github.com/en/actions/learn-github-actions/variables#default-environment-variables).
+Existing issue lookup uses open issues authored by the token user.
 
-1. Commit your changes
+## Job Summary
 
-   ```bash
-   git add .
-   git commit -m "My first action is ready!"
-   ```
+This action appends a markdown summary to `GITHUB_STEP_SUMMARY`.
 
-1. Push them to your repository
+- It does not overwrite prior step summaries.
+- It includes success/failure status, package/ref context, issue details, and
+  diagnostic counts.
 
-   ```bash
-   git push -u origin releases/v1
-   ```
+GitHub uploads one summary per step and then aggregates all step summaries into
+the job summary view.
 
-1. Create a pull request and get feedback on your action
-1. Merge the pull request into the `main` branch
-
-Your action is now published! :rocket:
-
-For information about versioning your action, see
-[Versioning](https://github.com/actions/toolkit/blob/main/docs/action-versioning.md)
-in the GitHub Actions toolkit.
-
-## Validate the Action
-
-You can now validate the action by referencing it in a workflow file. For
-example, [`ci.yml`](./.github/workflows/ci.yml) demonstrates how to reference an
-action in the same repository.
+## Example Usage
 
 ```yaml
-steps:
-  - name: Checkout
-    id: checkout
-    uses: actions/checkout@v4
+name: Publish UAPKG
 
-  - name: Test Local Action
-    id: test-action
-    uses: ./
-    with:
-      milliseconds: 1000
+on:
+  release:
+    types: [published]
 
-  - name: Print Output
-    id: output
-    run: echo "${{ steps.test-action.outputs.time }}"
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Submit UAPKG publish request
+        id: publish
+        uses: uapkg/publish-action@v1
+        with:
+          token: ${{ secrets.UAPKG_PUBLISH_TOKEN }}
+
+      - name: Print publish issue
+        run: echo "Issue URL: ${{ steps.publish.outputs.issue-url }}"
 ```
 
-For example workflow runs, check out the
-[Actions tab](https://github.com/actions/typescript-action/actions)! :rocket:
+## Development
 
-## Usage
-
-After testing, you can create version tag(s) that developers can use to
-reference different stable versions of your action. For more information, see
-[Versioning](https://github.com/actions/toolkit/blob/main/docs/action-versioning.md)
-in the GitHub Actions toolkit.
-
-To include the action in a workflow in another repository, you can use the
-`uses` syntax with the `@` symbol to reference a specific branch, tag, or commit
-hash.
-
-```yaml
-steps:
-  - name: Checkout
-    id: checkout
-    uses: actions/checkout@v4
-
-  - name: Test Local Action
-    id: test-action
-    uses: actions/typescript-action@v1 # Commit with the `v1` tag
-    with:
-      milliseconds: 1000
-
-  - name: Print Output
-    id: output
-    run: echo "${{ steps.test-action.outputs.time }}"
-```
-
-## Publishing a New Release
-
-This project includes a helper script, [`script/release`](./script/release)
-designed to streamline the process of tagging and pushing new releases for
-GitHub Actions.
-
-GitHub Actions allows users to select a specific version of the action to use,
-based on release tags. This script simplifies this process by performing the
-following steps:
-
-1. **Retrieving the latest release tag:** The script starts by fetching the most
-   recent SemVer release tag of the current branch, by looking at the local data
-   available in your repository.
-1. **Prompting for a new release tag:** The user is then prompted to enter a new
-   release tag. To assist with this, the script displays the tag retrieved in
-   the previous step, and validates the format of the inputted tag (vX.X.X). The
-   user is also reminded to update the version field in package.json.
-1. **Tagging the new release:** The script then tags a new release and syncs the
-   separate major tag (e.g. v1, v2) with the new release tag (e.g. v1.0.0,
-   v2.1.2). When the user is creating a new major release, the script
-   auto-detects this and creates a `releases/v#` branch for the previous major
-   version.
-1. **Pushing changes to remote:** Finally, the script pushes the necessary
-   commits, tags and branches to the remote repository. From here, you will need
-   to create a new release in GitHub so users can easily reference the new tags
-   in their workflows.
-
-## Dependency License Management
-
-This template includes a GitHub Actions workflow,
-[`licensed.yml`](./.github/workflows/licensed.yml), that uses
-[Licensed](https://github.com/licensee/licensed) to check for dependencies with
-missing or non-compliant licenses. This workflow is initially disabled. To
-enable the workflow, follow the below steps.
-
-1. Open [`licensed.yml`](./.github/workflows/licensed.yml)
-1. Uncomment the following lines:
-
-   ```yaml
-   # pull_request:
-   #   branches:
-   #     - main
-   # push:
-   #   branches:
-   #     - main
-   ```
-
-1. Save and commit the changes
-
-Once complete, this workflow will run any time a pull request is created or
-changes pushed directly to `main`. If the workflow detects any dependencies with
-missing or non-compliant licenses, it will fail the workflow and provide details
-on the issue(s) found.
-
-### Updating Licenses
-
-Whenever you install or update dependencies, you can use the Licensed CLI to
-update the licenses database. To install Licensed, see the project's
-[Readme](https://github.com/licensee/licensed?tab=readme-ov-file#installation).
-
-To update the cached licenses, run the following command:
+Install dependencies:
 
 ```bash
-licensed cache
+npm install
 ```
 
-To check the status of cached licenses, run the following command:
+Run tests:
 
 ```bash
-licensed status
+npm run test
 ```
+
+Bundle the action:
+
+```bash
+npm run bundle
+```
+
+The bundled output in `dist/` is generated code and should be refreshed after
+source changes.
