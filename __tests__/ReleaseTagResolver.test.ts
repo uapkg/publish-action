@@ -81,7 +81,9 @@ describe('ReleaseTagResolver', () => {
     const result = await resolver.resolve()
 
     expect(result.ok).toBe(false)
-    expect(result.diagnostics.some((d) => d.code === 'PUBLISH_ACTION_EVENT_PAYLOAD_READ_WARNING')).toBe(true)
+    expect(result.diagnostics.some((d) => (d.code as string) === 'PUBLISH_ACTION_EVENT_PAYLOAD_READ_WARNING')).toBe(
+      true,
+    )
   })
 
   it('adds a warning when event payload is invalid json', async () => {
@@ -96,7 +98,9 @@ describe('ReleaseTagResolver', () => {
       const result = await resolver.resolve()
 
       expect(result.ok).toBe(false)
-      expect(result.diagnostics.some((d) => d.code === 'PUBLISH_ACTION_EVENT_PAYLOAD_PARSE_WARNING')).toBe(true)
+      expect(result.diagnostics.some((d) => (d.code as string) === 'PUBLISH_ACTION_EVENT_PAYLOAD_PARSE_WARNING')).toBe(
+        true,
+      )
     } finally {
       await rm(directory, { recursive: true, force: true })
     }

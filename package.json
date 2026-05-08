@@ -45,8 +45,9 @@
     "prepare": "husky",
     "release:publish": "node ./script/release-publish.mjs",
     "smoke:release": "node ./script/post-build-smoke-check.mjs",
+    "typecheck": "npx tsc -p tsconfig.test.json --noEmit",
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 npx jest",
-    "all": "npm run format:write && npm run lint && npm run test && npm run coverage && npm run package"
+    "all": "npm run format:write && npm run lint && npm run typecheck && npm run test && npm run coverage && npm run package"
   },
   "license": "MIT",
   "dependencies": {
@@ -58,17 +59,17 @@
     "@uapkg/package-manifest": "^1.1.10"
   },
   "devDependencies": {
-    "@changesets/cli": "^2.29.7",
     "@biomejs/biome": "^2.2.6",
+    "@changesets/cli": "^2.29.7",
     "@jest/globals": "^30.4.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^25.6.2",
     "cross-env": "^10.1.0",
     "esbuild": "^0.28.0",
+    "github-actionlint": "^1.7.12",
     "husky": "^9.1.7",
     "jest": "^30.4.0",
     "make-coverage-badge": "^1.2.0",
-    "github-actionlint": "^1.7.12",
     "prettier": "^3.8.3",
     "semver": "^7.7.2",
     "ts-jest": "^29.4.9",

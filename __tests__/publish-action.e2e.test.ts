@@ -195,7 +195,7 @@ describe('publish action e2e', () => {
   beforeEach(() => {
     jest.clearAllMocks()
 
-    summary.addRaw.mockReturnValue(summary)
+    summary.addRaw.mockReturnValue(core.summary)
     summary.write.mockResolvedValue(undefined)
 
     state = {

@@ -186,7 +186,7 @@ describe('RegistryIssueService', () => {
     }
 
     expect(result.value.issueNumber).toBe(7)
-    expect(result.diagnostics.some((d) => d.code === 'PUBLISH_ACTION_DUPLICATE_ISSUES_WARNING')).toBe(true)
+    expect(result.diagnostics.some((d) => (d.code as string) === 'PUBLISH_ACTION_DUPLICATE_ISSUES_WARNING')).toBe(true)
   })
 
   it('fails when authentication lookup fails during existing issue search', async () => {

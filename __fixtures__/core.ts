@@ -10,8 +10,8 @@ export const setFailed = jest.fn<typeof core.setFailed>()
 export const warning = jest.fn<typeof core.warning>()
 
 const summaryBuilder = {
-  addRaw: jest.fn(),
-  write: jest.fn(),
+  addRaw: jest.fn<(text: string, addEOL?: boolean) => unknown>(),
+  write: jest.fn<(options?: { overwrite?: boolean }) => Promise<unknown>>(),
 }
 
 summaryBuilder.addRaw.mockReturnValue(summaryBuilder)
