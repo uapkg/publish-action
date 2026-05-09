@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   actions: write
   contents: write
@@ -65,14 +69,18 @@ jobs:
         env:
           RELEASE_TAG: ${{ steps.release-meta.outputs.tag }}
         run: |
-          if [ -z "$(git status --porcelain -- badges)" ]; then
+          if [ -z "$(git status --porcelain -- badges README.md)" ]; then
             echo "No badge changes to commit."
             exit 0
           fi
 
-          git add badges
+          git add badges README.md
           git commit -m "chore: update badges for ${RELEASE_TAG} [skip ci]"
           git push origin HEAD:main
+
+      - name: Generate release notes from changelog
+        if: steps.release-meta.outputs.created == 'true'
+        run: node ./script/generate-release-notes.mjs
 
       - name: Create GitHub release
         if: steps.release-meta.outputs.created == 'true'
@@ -80,4 +88,4 @@ jobs:
         with:
           tag_name: ${{ steps.release-meta.outputs.tag }}
           target_commitish: action-release
-          generate_release_notes: true
+          body_path: .release-notes.md

@@ -6,7 +6,7 @@ import semver from 'semver'
 
 const RELEASE_BRANCH = 'action-release'
 const RELEASE_MARKER_FILE = '.release.json'
-const RELEASE_FILES = ['action.yml', 'README.md', 'LICENSE', 'badges', 'dist']
+const RELEASE_FILES = ['action.yml', 'README.md', 'LICENSE', 'CHANGELOG.md', 'badges', 'dist']
 
 class CommandRunner {
   run(command, args, options = {}) {

@@ -1,9 +1,11 @@
 # @uapkg/publish-action
 
+<!-- badges:start -->
 [![Test](https://github.com/uapkg/publish-action/actions/workflows/test.yml/badge.svg)](https://github.com/uapkg/publish-action/actions/workflows/test.yml)
-![Coverage](./badges/coverage.svg)
-![Version](./badges/version.svg)
-![Source SHA](./badges/source-sha.svg)
+[![Coverage](./badges/coverage.svg)](https://github.com/uapkg/publish-action/actions/workflows/test.yml)
+[![Version](./badges/version.svg)](https://github.com/uapkg/publish-action/releases/tag/v1.0.2)
+[![Source SHA](./badges/source-sha.svg)](https://github.com/uapkg/publish-action/tree/7eeb4f61a15e)
+<!-- badges:end -->
 
 TypeScript GitHub Action that submits a UAPKG publish request to a registry
 repository by creating or reusing a GitHub issue.
