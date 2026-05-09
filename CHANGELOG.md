@@ -1,5 +1,12 @@
 # @uapkg/publish-action
 
+## 1.0.3
+
+### Patch Changes
+
+- 43e0002: update badge creation
+- 43e0002: chore: update badge creation for GitHub Action
+
 ## 1.0.2
 
 ### Patch Changes
