@@ -1,0 +1,12 @@
+{
+  "version": "1.0.3",
+  "sourceCommit": "149cf2bb66ee428aeb5bdcbc9f06bc2e5ebf5016",
+  "sourceRef": "refs/heads/main",
+  "builtAt": 1778289386,
+  "isLatestRelease": true,
+  "latestTag": "v1.0.3",
+  "tag": "v1.0.3",
+  "majorTag": "v1",
+  "majorTagTarget": "v1.0.3",
+  "releaseBranch": "action-release"
+}
