@@ -3,8 +3,8 @@
 <!-- badges:start -->
 [![Test](https://github.com/uapkg/publish-action/actions/workflows/test.yml/badge.svg)](https://github.com/uapkg/publish-action/actions/workflows/test.yml)
 [![Coverage](./badges/coverage.svg)](https://github.com/uapkg/publish-action/actions/workflows/test.yml)
-[![Version](./badges/version.svg)](https://github.com/uapkg/publish-action/releases/tag/v1.0.3)
-[![Source SHA](./badges/source-sha.svg)](https://github.com/uapkg/publish-action/tree/149cf2bb66ee428aeb5bdcbc9f06bc2e5ebf5016)
+[![Version](./badges/version.svg)](https://github.com/uapkg/publish-action/releases/tag/v1.0.4)
+[![Source SHA](./badges/source-sha.svg)](https://github.com/uapkg/publish-action/tree/58bfc618e7bc705c50cc381d7a209b05783a648b)
 <!-- badges:end -->
 
 TypeScript GitHub Action that submits a UAPKG publish request to a registry
