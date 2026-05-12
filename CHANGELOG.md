@@ -1,5 +1,11 @@
 # @uapkg/publish-action
 
+## 1.0.4
+
+### Patch Changes
+
+- 855f339: chore: update license
+
 ## 1.0.3
 
 ### Patch Changes
