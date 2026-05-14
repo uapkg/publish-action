@@ -7,7 +7,7 @@
 [![Source SHA](./badges/source-sha.svg)](https://github.com/uapkg/publish-action/tree/58bfc618e7bc705c50cc381d7a209b05783a648b)
 <!-- badges:end -->
 
-TypeScript GitHub Action that submits a UAPKG publish request to a registry
+TypeScript GitHub Action that submits a uapkg publish request to a registry
 repository by creating or reusing a GitHub issue.
 
 This action does not publish packages directly.
@@ -141,7 +141,7 @@ the job summary view.
 ## Example Usage
 
 ```yaml
-name: Publish UAPKG
+name: Publish uapkg
 
 on:
   release:
@@ -156,11 +156,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Submit UAPKG publish request
+      - name: Submit uapkg publish request
         id: publish
         uses: uapkg/publish-action@v1
         with:
-          token: ${{ secrets.UAPKG_PUBLISH_TOKEN }}
+          token: ${{ secrets.uapkg_PUBLISH_TOKEN }}
 
       - name: Print publish issue
         run: echo "Issue URL: ${{ steps.publish.outputs.issue-url }}"

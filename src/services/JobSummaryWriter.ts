@@ -6,7 +6,7 @@ export class JobSummaryWriter {
     const diagnosticsBlock = this.renderDiagnostics(summary.diagnostics.formattedDiagnostics)
 
     const markdown = [
-      '## UAPKG Publish Action',
+      '## uapkg Publish Action',
       '',
       '- Status: success',
       `- Issue State: ${summary.issue.issueState}`,
@@ -34,7 +34,7 @@ export class JobSummaryWriter {
     const diagnosticsBlock = this.renderDiagnostics(summary.diagnostics.formattedDiagnostics)
 
     const markdown = [
-      '## UAPKG Publish Action',
+      '## uapkg Publish Action',
       '',
       '- Status: failed',
       summary.registryRepo ? `- Registry Repo: ${summary.registryRepo}` : '',

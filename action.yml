@@ -1,4 +1,4 @@
-name: UAPKG Publish Action
+name: uapkg Publish Action
 description: Publish a package to the registry
 author: uapkg
 

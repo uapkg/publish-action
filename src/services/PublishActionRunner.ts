@@ -164,6 +164,6 @@ export class PublishActionRunner {
       return errorDiagnostic.message
     }
 
-    return 'UAPKG publish request failed.'
+    return 'uapkg publish request failed.'
   }
 }

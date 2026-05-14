@@ -124,7 +124,7 @@ describe('PublishActionRunner', () => {
 
     await runner.run()
 
-    expect(core.setFailed).toHaveBeenCalledWith('UAPKG publish request failed.')
+    expect(core.setFailed).toHaveBeenCalledWith('uapkg publish request failed.')
     expect(summaryWriter.writeFailure).toHaveBeenCalledTimes(1)
   })
 

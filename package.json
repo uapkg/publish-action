@@ -1,6 +1,6 @@
 {
   "name": "@uapkg/publish-action",
-  "description": "GitHub Action that submits UAPKG publish requests to a registry repository",
+  "description": "GitHub Action that submits uapkg publish requests to a registry repository",
   "version": "1.0.4",
   "author": "",
   "type": "module",
