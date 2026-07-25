@@ -4,21 +4,20 @@ import type { PublishFailureSummary, PublishSuccessSummary } from '../contracts/
 export class JobSummaryWriter {
   async writeSuccess(summary: PublishSuccessSummary): Promise<void> {
     const diagnosticsBlock = this.renderDiagnostics(summary.diagnostics.formattedDiagnostics)
-
     const markdown = [
       '## uapkg Publish Action',
       '',
-      '- Status: success',
-      `- Issue State: ${summary.issue.issueState}`,
-      `- Issue: [#${summary.issue.issueNumber}](${summary.issue.issueUrl})`,
-      `- Registry Repo: ${summary.registryRepo}`,
-      `- Existing Request Policy: ${summary.existingRequestPolicy}`,
+      `- Status: ${summary.detached ? 'submitted' : 'accepted'}`,
+      `- Request ID: ${summary.request.requestId}`,
+      `- Request Status: ${summary.request.status}`,
+      `- Registry ID: ${summary.registryId}`,
       '',
       '### Package',
       `- Name: ${summary.metadata.packageName}`,
       `- Version: ${summary.metadata.packageVersion}`,
       `- Source: ${summary.metadata.packageSource}`,
-      `- Ref: ${summary.metadata.releaseTag}`,
+      `- Release Tag: ${summary.metadata.releaseTag}`,
+      `- Manifest: ${summary.metadata.manifestPath}`,
       '',
       '### Diagnostics',
       `- Errors: ${summary.diagnostics.errors}`,
@@ -32,13 +31,13 @@ export class JobSummaryWriter {
 
   async writeFailure(summary: PublishFailureSummary): Promise<void> {
     const diagnosticsBlock = this.renderDiagnostics(summary.diagnostics.formattedDiagnostics)
-
     const markdown = [
       '## uapkg Publish Action',
       '',
       '- Status: failed',
-      summary.registryRepo ? `- Registry Repo: ${summary.registryRepo}` : '',
-      summary.existingRequestPolicy ? `- Existing Request Policy: ${summary.existingRequestPolicy}` : '',
+      summary.request ? `- Request ID: ${summary.request.requestId}` : '',
+      summary.request ? `- Request Status: ${summary.request.status}` : '',
+      summary.registryId ? `- Registry ID: ${summary.registryId}` : '',
       summary.metadata?.packageName ? `- Package Name: ${summary.metadata.packageName}` : '',
       summary.metadata?.packageVersion ? `- Package Version: ${summary.metadata.packageVersion}` : '',
       summary.metadata?.packageSource ? `- Package Source: ${summary.metadata.packageSource}` : '',
@@ -62,21 +61,19 @@ export class JobSummaryWriter {
     }
 
     const lines = ['']
-
     for (const diagnostic of formattedDiagnostics) {
       lines.push('```text')
       lines.push(diagnostic)
       lines.push('```')
     }
-
     return lines.join('\n')
   }
 
   private async append(markdown: string): Promise<void> {
     try {
       await core.summary.addRaw(markdown).write({ overwrite: false })
-    } catch (error) {
-      core.warning(`Failed to write job summary: ${String(error)}`)
+    } catch {
+      core.warning('Failed to write the uapkg job summary.')
     }
   }
 }

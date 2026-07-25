@@ -1,49 +1,44 @@
 name: uapkg Publish Action
-description: Publish a package to the registry
+description: Publish an existing UAPKG package through GitHub Actions trusted publishing
 author: uapkg
 
-# Add your action's branding here. This will appear on the GitHub Marketplace.
 branding:
   icon: upload-cloud
   color: blue
 
-# Define your inputs here.
 inputs:
-  token:
-    description: GitHub token used to create issues in the target registry repository
+  registry-id:
+    description: Canonical UUID of the target UAPKG registry
     required: true
-  registry-repo:
-    description: Registry repository in owner/name form
-    required: false
-    default: uapkg/registry
   manifest-path:
-    description: Path to the uapkg manifest file
+    description: Repository-relative path to the uapkg manifest
     required: false
     default: uapkg.json
   release-tag:
-    description: Release tag or ref to publish
+    description: GitHub Release tag to publish (defaults to the release event, tag ref, or v<manifest version>)
     required: false
-  existing-request-policy:
-    description: Policy for handling an existing matching publish request issue
+  asset:
+    description: Name of the package asset attached to the GitHub Release
     required: false
-    default: reuse-existing
+    default: package.tgz
+  detach:
+    description: Return after submission instead of waiting for a terminal result
+    required: false
+    default: "false"
 
-# Define your outputs here.
 outputs:
-  issue-number:
-    description: Registry issue number
-  issue-url:
-    description: Registry issue URL
-  issue-state:
-    description: Whether the issue was created or reused
+  request-id:
+    description: UAPKG registry request identifier
+  request-status:
+    description: Last observed UAPKG registry request status
   package-name:
     description: Package name read from uapkg.json
   package-version:
     description: Package version read from uapkg.json
   package-source:
-    description: Package source repository in owner/name form
+    description: GitHub source repository in owner/name form
   release-tag:
-    description: Resolved release tag
+    description: Resolved GitHub Release tag
 
 runs:
   using: node24

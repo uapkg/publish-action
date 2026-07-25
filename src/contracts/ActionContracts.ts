@@ -1,30 +1,68 @@
-export type ExistingRequestPolicy = 'create-new' | 'reuse-existing' | 'fail-if-existing'
+export type RegistryRequestStatus =
+  | 'queued'
+  | 'running'
+  | 'waiting_for_pr_checks'
+  | 'accepted'
+  | 'failed'
+  | 'timed_out'
+  | 'finalization_failed'
 
 export interface PublishActionInputs {
-  readonly token: string
-  readonly registryRepo: string
+  readonly registryId: string
   readonly manifestPath: string
   readonly releaseTagInput?: string
-  readonly existingRequestPolicy: ExistingRequestPolicy
+  readonly assetName: string
+  readonly detach: boolean
 }
 
 export interface PublishMetadata {
   readonly packageName: string
   readonly packageVersion: string
   readonly packageSource: string
+  readonly manifestPath: string
   readonly releaseTag: string
 }
 
-export interface RepositoryRef {
-  readonly owner: string
-  readonly name: string
-  readonly fullName: string
+export interface PublishManifestMetadata {
+  readonly packageName: string
+  readonly packageVersion: string
+  readonly packageSource: string
+  readonly manifestPath: string
 }
 
-export interface PublishIssueResult {
-  readonly issueNumber: number
-  readonly issueUrl: string
-  readonly issueState: 'created' | 'existing'
+export interface GitHubReleaseSource {
+  readonly type: 'github_release'
+  readonly repository: string
+  readonly releaseTag: string
+  readonly assetName: string
+  readonly pathToManifest: string
+}
+
+export interface PublishRequestSubmission {
+  readonly registryId: string
+  readonly kind: 'publish_new_version'
+  readonly payload: {
+    readonly packageName: string
+    readonly packageVersion: string
+    readonly source: GitHubReleaseSource
+  }
+}
+
+export interface OidcSession {
+  readonly token: string
+  readonly expiresAt: number
+}
+
+export interface PublishRequestResult {
+  readonly requestId: string
+  readonly status: RegistryRequestStatus
+}
+
+export interface RegistryRequestResult {
+  readonly request: {
+    readonly id: string
+    readonly status: RegistryRequestStatus
+  }
 }
 
 export interface DiagnosticsReport {
@@ -36,31 +74,15 @@ export interface DiagnosticsReport {
 
 export interface PublishSuccessSummary {
   readonly metadata: PublishMetadata
-  readonly registryRepo: string
-  readonly existingRequestPolicy: ExistingRequestPolicy
-  readonly issue: PublishIssueResult
+  readonly registryId: string
+  readonly request: PublishRequestResult
+  readonly detached: boolean
   readonly diagnostics: DiagnosticsReport
 }
 
 export interface PublishFailureSummary {
   readonly metadata?: Partial<PublishMetadata>
-  readonly registryRepo?: string
-  readonly existingRequestPolicy?: ExistingRequestPolicy
+  readonly registryId?: string
+  readonly request?: PublishRequestResult
   readonly diagnostics: DiagnosticsReport
-}
-
-export interface PublishIssueRequest {
-  readonly registryRepo: RepositoryRef
-  readonly existingRequestPolicy: ExistingRequestPolicy
-  readonly packageName: string
-  readonly packageVersion: string
-  readonly packageSource: string
-  readonly releaseTag: string
-}
-
-export interface ReleaseAssetVerificationRequest {
-  readonly packageSource: RepositoryRef
-  readonly releaseTag: string
-  readonly packageName: string
-  readonly packageVersion: string
 }

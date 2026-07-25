@@ -14,8 +14,8 @@ export async function run(): Promise<void> {
 
   try {
     await runner.run()
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
+  } catch {
+    const message = 'The uapkg publish action failed unexpectedly.'
     const bag = new DiagnosticBag()
     bag.add(createUnknownErrorDiagnostic(message))
 

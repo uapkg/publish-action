@@ -7,156 +7,22 @@ interface MockManifest {
   readonly kind: 'plugin' | 'project'
 }
 
-interface MockIssueItem {
-  readonly number: number
-  readonly html_url: string
-  readonly title: string
-  readonly pull_request?: unknown
-}
-
-interface MockState {
-  readonly manifestResult:
-    | { ok: true; value: MockManifest; diagnostics: readonly [] }
-    | { ok: false; diagnostics: readonly [] }
-  readonly releaseAssets: readonly { id: number; name: string }[]
-  readonly existingIssues: readonly MockIssueItem[]
-  readonly authenticatedLogin: string
-  readonly createdIssue: { number: number; html_url: string }
-  readonly authErrors: MockRequestError[]
-  readonly releaseByTagErrors: MockRequestError[]
-  readonly searchErrors: MockRequestError[]
-  readonly createIssueErrors: MockRequestError[]
-}
-
-interface MockRequestError {
-  readonly status: number
-  readonly message: string
-  readonly response?: {
-    readonly headers?: Record<string, string>
-  }
-}
-
-const getAuthenticated = jest.fn(async () => {
-  const error = state.authErrors.shift()
-  if (error) {
-    throw error
-  }
-
-  return {
-    data: { login: state.authenticatedLogin },
-  }
-})
-
-const getReleaseByTag = jest.fn(async () => {
-  const error = state.releaseByTagErrors.shift()
-  if (error) {
-    throw error
-  }
-
-  return {
-    data: { assets: state.releaseAssets },
-  }
-})
-
-const createIssue = jest.fn(async () => {
-  const error = state.createIssueErrors.shift()
-  if (error) {
-    throw error
-  }
-
-  return { data: state.createdIssue }
-})
-
-const searchIssuesAndPullRequests = jest.fn(async () => {
-  const error = state.searchErrors.shift()
-  if (error) {
-    throw error
-  }
-
-  return {
-    data: { items: state.existingIssues },
-  }
-})
-
-const octokitConstructor = jest.fn()
-
-let state: MockState = {
-  manifestResult: {
-    ok: true,
-    value: {
-      name: 'my-package',
-      version: '1.2.0',
-      kind: 'plugin',
-    },
-    diagnostics: [],
-  },
-  releaseAssets: [{ id: 1, name: 'my-package@1.2.0.tgz' }],
-  existingIssues: [],
-  authenticatedLogin: 'token-user',
-  createdIssue: {
-    number: 42,
-    html_url: 'https://github.com/uapkg/registry/issues/42',
-  },
-  authErrors: [],
-  releaseByTagErrors: [],
-  searchErrors: [],
-  createIssueErrors: [],
-}
-
-function createRequestError(status: number, message: string, rateLimitRemaining?: string): MockRequestError {
-  if (rateLimitRemaining !== undefined) {
-    return {
-      status,
-      message,
-      response: {
-        headers: {
-          'x-ratelimit-remaining': rateLimitRemaining,
-        },
-      },
-    }
-  }
-
-  return {
-    status,
-    message,
-  }
+let manifestResult:
+  | { ok: true; value: MockManifest; diagnostics: readonly [] }
+  | { ok: false; diagnostics: readonly [] } = {
+  ok: true,
+  value: { name: 'my-package', version: '1.2.0', kind: 'plugin' },
+  diagnostics: [],
 }
 
 class MockManifestReader {
-  async read(): Promise<MockState['manifestResult']> {
-    return state.manifestResult
-  }
-}
-
-class MockOctokit {
-  readonly rest = {
-    users: {
-      getAuthenticated,
-    },
-    repos: {
-      getReleaseByTag,
-    },
-    issues: {
-      create: createIssue,
-    },
-  }
-
-  readonly search = {
-    issuesAndPullRequests: searchIssuesAndPullRequests,
-  }
-
-  constructor(options: { auth?: string }) {
-    octokitConstructor(options)
+  async read(): Promise<typeof manifestResult> {
+    return manifestResult
   }
 }
 
 jest.unstable_mockModule('@actions/core', () => core)
-jest.unstable_mockModule('@uapkg/package-manifest', () => ({
-  ManifestReader: MockManifestReader,
-}))
-jest.unstable_mockModule('@octokit/action', () => ({
-  Octokit: MockOctokit,
-}))
+jest.unstable_mockModule('@uapkg/package-manifest', () => ({ ManifestReader: MockManifestReader }))
 jest.unstable_mockModule('@uapkg/log', () => ({
   __esModule: true,
   createLogger: () => ({
@@ -165,218 +31,139 @@ jest.unstable_mockModule('@uapkg/log', () => ({
     error: () => undefined,
     debug: () => undefined,
   }),
-  configureLogger: () => undefined,
-  default: {
-    info: () => undefined,
-    warn: () => undefined,
-    error: () => undefined,
-    debug: () => undefined,
-  },
 }))
 
 const { run } = await import('../src/main.js')
 
 describe('publish action e2e', () => {
   const envSnapshot = { ...process.env }
+  const originalFetch = globalThis.fetch
+  const inputValues: Record<string, string> = {
+    'registry-id': '11111111-1111-4111-8111-111111111111',
+    'manifest-path': 'uapkg.json',
+    'release-tag': '',
+    asset: '',
+    detach: '',
+  }
 
   const summary = core.summary as unknown as {
     addRaw: jest.MockedFunction<(message: string) => typeof core.summary>
     write: jest.MockedFunction<(options?: { overwrite?: boolean }) => Promise<void>>
   }
 
-  const inputValues: Record<string, string> = {
-    token: 'token-value',
-    'registry-repo': 'uapkg/registry',
-    'manifest-path': 'uapkg.json',
-    'release-tag': '',
-    'existing-request-policy': 'reuse-existing',
-  }
-
   beforeEach(() => {
     jest.clearAllMocks()
-
+    manifestResult = {
+      ok: true,
+      value: { name: 'my-package', version: '1.2.0', kind: 'plugin' },
+      diagnostics: [],
+    }
+    inputValues.detach = ''
+    core.getInput.mockImplementation((name: string) => inputValues[name] ?? '')
+    core.getIDToken.mockResolvedValue('github-id-secret')
     summary.addRaw.mockReturnValue(core.summary)
     summary.write.mockResolvedValue(undefined)
 
-    state = {
-      manifestResult: {
-        ok: true,
-        value: {
-          name: 'my-package',
-          version: '1.2.0',
-          kind: 'plugin',
-        },
-        diagnostics: [],
-      },
-      releaseAssets: [{ id: 1, name: 'my-package@1.2.0.tgz' }],
-      existingIssues: [],
-      authenticatedLogin: 'token-user',
-      createdIssue: {
-        number: 42,
-        html_url: 'https://github.com/uapkg/registry/issues/42',
-      },
-      authErrors: [],
-      releaseByTagErrors: [],
-      searchErrors: [],
-      createIssueErrors: [],
+    process.env = {
+      ...envSnapshot,
+      GITHUB_REPOSITORY: 'uapkg/source-repo',
+      GITHUB_REF_TYPE: 'tag',
+      GITHUB_REF_NAME: 'v1.2.0',
+      GITHUB_RUN_ID: '12345',
+      GITHUB_JOB: 'publish',
+      GITHUB_WORKSPACE: process.cwd(),
     }
+  })
 
-    inputValues.token = 'token-value'
-    inputValues['registry-repo'] = 'uapkg/registry'
-    inputValues['manifest-path'] = 'uapkg.json'
-    inputValues['release-tag'] = ''
-    inputValues['existing-request-policy'] = 'reuse-existing'
-
-    core.getInput.mockImplementation((name: string) => inputValues[name] ?? '')
-
-    process.env = { ...envSnapshot }
-    process.env.GITHUB_REPOSITORY = 'uapkg/source-repo'
-    process.env.GITHUB_REF_TYPE = 'tag'
-    process.env.GITHUB_REF_NAME = 'v1.2.0'
+  afterEach(() => {
+    globalThis.fetch = originalFetch
   })
 
   afterAll(() => {
     process.env = envSnapshot
+    globalThis.fetch = originalFetch
   })
 
-  it('creates a publish issue and emits outputs on success', async () => {
-    await run()
+  it('exchanges OIDC, submits an existing-package request, and polls to acceptance', async () => {
+    const fetchMock = jest
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(Response.json({ ok: true, token: 'session-secret', expiresAt: 2_000_000_000 }))
+      .mockResolvedValueOnce(Response.json({ ok: true, requestId: 'req_42', status: 'queued' }, { status: 202 }))
+      .mockResolvedValueOnce(Response.json({ ok: true, request: { id: 'req_42', status: 'accepted' } }))
+    globalThis.fetch = fetchMock
 
-    expect(core.setFailed).not.toHaveBeenCalled()
-    expect(octokitConstructor).toHaveBeenCalledWith({ auth: 'token-value' })
-    expect(getReleaseByTag).toHaveBeenCalledWith({
-      owner: 'uapkg',
-      repo: 'source-repo',
-      tag: 'v1.2.0',
+    jest.useFakeTimers()
+    try {
+      const runPromise = run()
+      await jest.advanceTimersByTimeAsync(5_000)
+      await runPromise
+    } finally {
+      jest.useRealTimers()
+    }
+
+    expect(core.getIDToken).toHaveBeenCalledWith('uapkg')
+    expect(core.setSecret).toHaveBeenCalledWith('github-id-secret')
+    expect(core.setSecret).toHaveBeenCalledWith('session-secret')
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+
+    const submit = fetchMock.mock.calls[1]
+    expect(submit?.[0]).toBe('https://api.uapkg.dev/v1/registry-requests')
+    expect(submit?.[1]?.headers).toMatchObject({
+      authorization: 'Bearer session-secret',
+      'x-uapkg-idempotency-key': expect.stringMatching(/^gha-[0-9a-f]{64}$/),
     })
-    expect(searchIssuesAndPullRequests).toHaveBeenCalledTimes(1)
-    expect(createIssue).toHaveBeenCalledTimes(1)
-
-    expect(core.setOutput).toHaveBeenCalledWith('issue-number', 42)
-    expect(core.setOutput).toHaveBeenCalledWith('issue-url', 'https://github.com/uapkg/registry/issues/42')
-    expect(core.setOutput).toHaveBeenCalledWith('issue-state', 'created')
-    expect(core.setOutput).toHaveBeenCalledWith('package-name', 'my-package')
-    expect(core.setOutput).toHaveBeenCalledWith('package-version', '1.2.0')
-    expect(core.setOutput).toHaveBeenCalledWith('package-source', 'uapkg/source-repo')
-    expect(core.setOutput).toHaveBeenCalledWith('release-tag', 'v1.2.0')
-
-    expect(summary.addRaw).toHaveBeenCalledWith(expect.stringContaining('- Status: success'))
-    expect(summary.write).toHaveBeenCalledWith({ overwrite: false })
-  })
-
-  it('reuses existing matching issue under reuse-existing policy', async () => {
-    state = {
-      ...state,
-      existingIssues: [
-        {
-          number: 7,
-          html_url: 'https://github.com/uapkg/registry/issues/7',
-          title: '[publish] my-package@1.2.0',
+    expect(JSON.parse(String(submit?.[1]?.body))).toEqual({
+      registryId: '11111111-1111-4111-8111-111111111111',
+      kind: 'publish_new_version',
+      payload: {
+        packageName: 'my-package',
+        packageVersion: '1.2.0',
+        source: {
+          type: 'github_release',
+          repository: 'uapkg/source-repo',
+          releaseTag: 'v1.2.0',
+          assetName: 'package.tgz',
+          pathToManifest: 'uapkg.json',
         },
-      ],
-    }
-
-    await run()
-
+      },
+    })
+    expect(core.setOutput).toHaveBeenCalledWith('request-id', 'req_42')
+    expect(core.setOutput).toHaveBeenCalledWith('request-status', 'accepted')
     expect(core.setFailed).not.toHaveBeenCalled()
-    expect(createIssue).not.toHaveBeenCalled()
-    expect(core.setOutput).toHaveBeenCalledWith('issue-number', 7)
-    expect(core.setOutput).toHaveBeenCalledWith('issue-state', 'existing')
+    expect(summary.addRaw).toHaveBeenCalledWith(expect.stringContaining('- Status: accepted'))
   })
 
-  it('fails when release has ambiguous publish assets', async () => {
-    state = {
-      ...state,
-      releaseAssets: [
-        { id: 1, name: 'package.tgz' },
-        { id: 2, name: 'my-package@1.2.0.tgz' },
-      ],
-    }
+  it('does not poll when detach is true', async () => {
+    inputValues.detach = 'true'
+    const fetchMock = jest
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(Response.json({ ok: true, token: 'session-secret', expiresAt: 2_000_000_000 }))
+      .mockResolvedValueOnce(Response.json({ ok: true, requestId: 'req_42', status: 'queued' }, { status: 202 }))
+    globalThis.fetch = fetchMock
 
     await run()
 
-    expect(createIssue).not.toHaveBeenCalled()
-    expect(core.setFailed).toHaveBeenCalledWith(expect.stringContaining('publishable assets found'))
-    expect(summary.addRaw).toHaveBeenCalledWith(expect.stringContaining('- Status: failed'))
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(core.setOutput).toHaveBeenCalledWith('request-status', 'queued')
+    expect(summary.addRaw).toHaveBeenCalledWith(expect.stringContaining('- Status: submitted'))
   })
 
-  it('fails when policy is fail-if-existing and issue already exists', async () => {
-    inputValues['existing-request-policy'] = 'fail-if-existing'
-    state = {
-      ...state,
-      existingIssues: [
+  it('fails closed when the trusted-publisher exchange is rejected', async () => {
+    const fetchMock = jest.fn<typeof fetch>().mockResolvedValue(
+      Response.json(
         {
-          number: 7,
-          html_url: 'https://github.com/uapkg/registry/issues/7',
-          title: '[publish] my-package@1.2.0',
+          ok: false,
+          error: { code: 'OIDC_RULE_NOT_FOUND', message: 'No exact-package trusted publisher rule matched.' },
         },
-      ],
-    }
-
-    await run()
-
-    expect(createIssue).not.toHaveBeenCalled()
-    expect(core.setFailed).toHaveBeenCalledWith(expect.stringContaining('Existing publish request found'))
-  })
-
-  it('maps 401 API failures to invalid token messaging', async () => {
-    state = {
-      ...state,
-      releaseByTagErrors: [createRequestError(401, 'Bad credentials')],
-    }
-
-    await run()
-
-    expect(core.setFailed).toHaveBeenCalledWith(expect.stringContaining('token is invalid or expired'))
-    expect(createIssue).not.toHaveBeenCalled()
-  })
-
-  it('maps 403 rate-limit failures to rate-limit messaging', async () => {
-    state = {
-      ...state,
-      releaseByTagErrors: [createRequestError(403, 'API rate limit exceeded', '0')],
-    }
-
-    await run()
-
-    expect(core.setFailed).toHaveBeenCalledWith(expect.stringContaining('token rate limit is exhausted'))
-  })
-
-  it('maps 403 permission failures to permission messaging', async () => {
-    state = {
-      ...state,
-      releaseByTagErrors: [createRequestError(403, 'Resource not accessible by integration', '10')],
-    }
-
-    await run()
-
-    expect(core.setFailed).toHaveBeenCalledWith(expect.stringContaining('token lacks required permissions'))
-  })
-
-  it('maps 404 API failures to not-found messaging', async () => {
-    state = {
-      ...state,
-      createIssueErrors: [createRequestError(404, 'Not Found')],
-    }
-
-    await run()
-
-    expect(core.setFailed).toHaveBeenCalledWith(
-      expect.stringContaining('repository/resource not found or inaccessible'),
+        { status: 400 },
+      ),
     )
-  })
-
-  it('retries one transient 5xx failure and then succeeds', async () => {
-    state = {
-      ...state,
-      releaseByTagErrors: [createRequestError(500, 'Internal Server Error')],
-    }
+    globalThis.fetch = fetchMock
 
     await run()
 
-    expect(core.setFailed).not.toHaveBeenCalled()
-    expect(getReleaseByTag).toHaveBeenCalledTimes(2)
-    expect(createIssue).toHaveBeenCalledTimes(1)
-    expect(core.setOutput).toHaveBeenCalledWith('issue-state', 'created')
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(core.setFailed).toHaveBeenCalledWith('No exact-package trusted publisher rule matched.')
+    expect(summary.addRaw).toHaveBeenCalledWith(expect.stringContaining('- Status: failed'))
   })
 })

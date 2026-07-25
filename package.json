@@ -1,6 +1,6 @@
 {
   "name": "@uapkg/publish-action",
-  "description": "GitHub Action that submits uapkg publish requests to a registry repository",
+  "description": "GitHub Action for UAPKG OIDC trusted publishing",
   "version": "1.0.4",
   "author": "",
   "type": "module",
@@ -58,7 +58,6 @@
   "license": "MIT",
   "dependencies": {
     "@actions/core": "^3.0.1",
-    "@octokit/action": "^8.0.4",
     "@uapkg/diagnostics": "^1.1.10",
     "@uapkg/diagnostics-format": "^1.1.10",
     "@uapkg/log": "^1.1.10",

@@ -19,7 +19,7 @@ describe('ReleaseTagResolver', () => {
 
   it('prefers explicit release-tag input', async () => {
     const resolver = new ReleaseTagResolver()
-    const result = await resolver.resolve('v1.2.3')
+    const result = await resolver.resolve('v1.2.3', '9.9.9')
 
     expect(result.ok).toBe(true)
     if (!result.ok) {
@@ -39,7 +39,7 @@ describe('ReleaseTagResolver', () => {
       process.env.GITHUB_EVENT_PATH = eventPath
 
       const resolver = new ReleaseTagResolver()
-      const result = await resolver.resolve()
+      const result = await resolver.resolve(undefined, '1.2.3')
 
       expect(result.ok).toBe(true)
       if (!result.ok) {
@@ -57,7 +57,7 @@ describe('ReleaseTagResolver', () => {
     process.env.GITHUB_REF_NAME = 'v2.3.4'
 
     const resolver = new ReleaseTagResolver()
-    const result = await resolver.resolve()
+    const result = await resolver.resolve(undefined, '1.2.3')
 
     expect(result.ok).toBe(true)
     if (!result.ok) {
@@ -67,9 +67,17 @@ describe('ReleaseTagResolver', () => {
     expect(result.value).toBe('v2.3.4')
   })
 
-  it('fails when no release tag source exists', async () => {
+  it('falls back to v-prefixed manifest SemVer', async () => {
     const resolver = new ReleaseTagResolver()
-    const result = await resolver.resolve()
+    const result = await resolver.resolve(undefined, '1.2.3-beta.1')
+
+    expect(result.ok).toBe(true)
+    if (result.ok) expect(result.value).toBe('v1.2.3-beta.1')
+  })
+
+  it('fails when no release tag source exists and manifest version is unsuitable', async () => {
+    const resolver = new ReleaseTagResolver()
+    const result = await resolver.resolve(undefined, 'not-semver')
 
     expect(result.ok).toBe(false)
   })
@@ -78,7 +86,7 @@ describe('ReleaseTagResolver', () => {
     process.env.GITHUB_EVENT_PATH = join(tmpdir(), 'publish-action-event-does-not-exist.json')
 
     const resolver = new ReleaseTagResolver()
-    const result = await resolver.resolve()
+    const result = await resolver.resolve(undefined, 'not-semver')
 
     expect(result.ok).toBe(false)
     expect(result.diagnostics.some((d) => (d.code as string) === 'PUBLISH_ACTION_EVENT_PAYLOAD_READ_WARNING')).toBe(
@@ -95,7 +103,7 @@ describe('ReleaseTagResolver', () => {
       process.env.GITHUB_EVENT_PATH = eventPath
 
       const resolver = new ReleaseTagResolver()
-      const result = await resolver.resolve()
+      const result = await resolver.resolve(undefined, 'not-semver')
 
       expect(result.ok).toBe(false)
       expect(result.diagnostics.some((d) => (d.code as string) === 'PUBLISH_ACTION_EVENT_PAYLOAD_PARSE_WARNING')).toBe(

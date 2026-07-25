@@ -6,63 +6,66 @@ jest.unstable_mockModule('@actions/core', () => core)
 const { PublishActionInputReader } = await import('../src/services/PublishActionInputReader.js')
 
 describe('PublishActionInputReader', () => {
-  const defaults = {
-    token: 'token-value',
-    'registry-repo': '',
+  const defaults: Record<string, string> = {
+    'registry-id': '11111111-1111-4111-8111-111111111111',
     'manifest-path': '',
     'release-tag': '',
-    'existing-request-policy': '',
-  } as const
+    asset: '',
+    detach: '',
+  }
 
   beforeEach(() => {
-    core.getInput.mockImplementation((name: string) => defaults[name as keyof typeof defaults] ?? '')
+    core.getInput.mockImplementation((name: string) => defaults[name] ?? '')
   })
 
   afterEach(() => {
     jest.resetAllMocks()
   })
 
-  it('reads defaults when optional inputs are empty', () => {
-    const reader = new PublishActionInputReader()
-    const result = reader.read()
+  it('reads safe defaults for optional inputs', () => {
+    const result = new PublishActionInputReader().read()
 
     expect(result.ok).toBe(true)
-    if (!result.ok) {
-      return
-    }
+    if (!result.ok) return
 
-    expect(result.value.registryRepo).toBe('uapkg/registry')
-    expect(result.value.manifestPath).toBe('uapkg.json')
-    expect(result.value.existingRequestPolicy).toBe('reuse-existing')
+    expect(result.value).toEqual({
+      registryId: '11111111-1111-4111-8111-111111111111',
+      manifestPath: 'uapkg.json',
+      releaseTagInput: undefined,
+      assetName: 'package.tgz',
+      detach: false,
+    })
   })
 
-  it('fails for unsupported policy values', () => {
-    core.getInput.mockImplementation((name: string) => {
-      if (name === 'existing-request-policy') {
-        return 'unsupported'
-      }
+  it('reads explicit coordinates and detach', () => {
+    core.getInput.mockImplementation(
+      (name: string) =>
+        ({
+          ...defaults,
+          'manifest-path': 'packages/example/uapkg.json',
+          'release-tag': 'release-1',
+          asset: 'example.tgz',
+          detach: 'true',
+        })[name] ?? '',
+    )
 
-      return defaults[name as keyof typeof defaults] ?? ''
-    })
+    const result = new PublishActionInputReader().read()
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
 
-    const reader = new PublishActionInputReader()
-    const result = reader.read()
-
-    expect(result.ok).toBe(false)
+    expect(result.value.manifestPath).toBe('packages/example/uapkg.json')
+    expect(result.value.releaseTagInput).toBe('release-1')
+    expect(result.value.assetName).toBe('example.tgz')
+    expect(result.value.detach).toBe(true)
   })
 
-  it('fails when token is missing', () => {
-    core.getInput.mockImplementation((name: string) => {
-      if (name === 'token') {
-        return ''
-      }
-
-      return defaults[name as keyof typeof defaults] ?? ''
-    })
-
-    const reader = new PublishActionInputReader()
-    const result = reader.read()
-
-    expect(result.ok).toBe(false)
+  it.each([
+    ['registry-id', 'not-a-uuid'],
+    ['asset', '../package.tgz'],
+    ['asset', 'directory/package.tgz'],
+    ['detach', 'yes'],
+  ])('rejects invalid %s input', (input, value) => {
+    core.getInput.mockImplementation((name: string) => (name === input ? value : (defaults[name] ?? '')))
+    expect(new PublishActionInputReader().read().ok).toBe(false)
   })
 })

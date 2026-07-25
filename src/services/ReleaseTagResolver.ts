@@ -7,38 +7,63 @@ interface ReleaseEventPayload {
   }
 }
 
+const SEMVER_PATTERN =
+  /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/
+
 export class ReleaseTagResolver {
-  async resolve(explicitReleaseTag?: string): Promise<Result<string>> {
+  async resolve(explicitReleaseTag: string | undefined, packageVersion: string): Promise<Result<string>> {
     const bag = new DiagnosticBag()
 
-    if (explicitReleaseTag && explicitReleaseTag.trim().length > 0) {
-      return bag.toResult(explicitReleaseTag.trim())
+    if (explicitReleaseTag) {
+      return this.validateTag(explicitReleaseTag, bag, 'input')
     }
 
     const eventTag = await this.readReleaseTagFromEventPayload(bag)
     if (eventTag) {
-      return bag.toResult(eventTag)
+      return this.validateTag(eventTag, bag, 'release event')
     }
 
     const refType = process.env.GITHUB_REF_TYPE?.trim()
     const refName = process.env.GITHUB_REF_NAME?.trim()
-
     if (refType === 'tag' && refName) {
-      return bag.toResult(refName)
+      return this.validateTag(refName, bag, 'tag ref')
+    }
+
+    if (SEMVER_PATTERN.test(packageVersion)) {
+      return bag.toResult(`v${packageVersion}`)
     }
 
     bag.addError(
       'PUBLISH_ACTION_RELEASE_TAG_MISSING',
-      'Unable to resolve release tag. Provide "release-tag", trigger from a release event, or run from a tag ref.',
+      'Unable to resolve a release tag from the input, workflow event, tag ref, or manifest version.',
       {
         releaseTagInputProvided: false,
         githubRefType: refType,
         githubRefName: refName,
       },
-      'Set the action input "release-tag" explicitly when running outside release/tag contexts.',
+      'Set the action input "release-tag" explicitly.',
     )
 
     return bag.toFailure()
+  }
+
+  private validateTag(tag: string, bag: DiagnosticBag, source: string): Result<string> {
+    const normalized = tag.trim()
+    if (
+      normalized.length === 0 ||
+      normalized.length > 255 ||
+      containsControlCharacter(normalized) ||
+      normalized.startsWith('-')
+    ) {
+      bag.addError(
+        'PUBLISH_ACTION_RELEASE_TAG_INVALID',
+        `The release tag resolved from ${source} is invalid.`,
+        { source },
+        'Use a non-empty Git tag of at most 255 characters.',
+      )
+      return bag.toFailure()
+    }
+    return bag.toResult(normalized)
   }
 
   private async readReleaseTagFromEventPayload(bag: DiagnosticBag): Promise<string | undefined> {
@@ -48,27 +73,25 @@ export class ReleaseTagResolver {
     }
 
     let payloadRaw: string
-
     try {
       payloadRaw = await readFile(eventPath, 'utf8')
-    } catch (error) {
+    } catch {
       bag.addWarning(
         'PUBLISH_ACTION_EVENT_PAYLOAD_READ_WARNING',
-        `Could not read GITHUB_EVENT_PATH "${eventPath}": ${String(error)}.`,
-        { eventPath, reason: String(error) },
+        'The GitHub event payload could not be read; release-tag resolution will use the remaining sources.',
+        {},
       )
       return undefined
     }
 
     let payload: ReleaseEventPayload
-
     try {
       payload = JSON.parse(payloadRaw) as ReleaseEventPayload
-    } catch (error) {
+    } catch {
       bag.addWarning(
         'PUBLISH_ACTION_EVENT_PAYLOAD_PARSE_WARNING',
-        `Could not parse GITHUB_EVENT_PATH payload: ${String(error)}.`,
-        { eventPath, reason: String(error) },
+        'The GitHub event payload was not valid JSON; release-tag resolution will use the remaining sources.',
+        {},
       )
       return undefined
     }
@@ -76,4 +99,11 @@ export class ReleaseTagResolver {
     const releaseTag = payload.release?.tag_name?.trim()
     return releaseTag && releaseTag.length > 0 ? releaseTag : undefined
   }
+}
+
+function containsControlCharacter(value: string): boolean {
+  return Array.from(value).some((character) => {
+    const codePoint = character.codePointAt(0) ?? 0
+    return codePoint <= 31 || codePoint === 127
+  })
 }

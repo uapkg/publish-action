@@ -7,141 +7,111 @@
 [![Source SHA](./badges/source-sha.svg)](https://github.com/uapkg/publish-action/tree/58bfc618e7bc705c50cc381d7a209b05783a648b)
 <!-- badges:end -->
 
-TypeScript GitHub Action that submits a uapkg publish request to a registry
-repository by creating or reusing a GitHub issue.
+GitHub Action for publishing an existing UAPKG package with a configured
+GitHub Actions OIDC trusted-publisher rule.
 
-This action does not publish packages directly.
+The action has no token or password input. It obtains a short-lived GitHub
+Actions identity token for the fixed `uapkg` audience and exchanges it with
+the pinned UAPKG control plane. A rejected OIDC identity fails the action;
+there is no fallback to a stored credential.
 
-## Scope
+## Security model
 
-This action is only responsible for:
+This action:
 
-1. Reading publish metadata from `uapkg.json`.
-1. Resolving the release tag/ref.
-1. Verifying exactly one publishable release asset exists.
-1. Creating or reusing a registry issue.
-1. Returning issue details as outputs.
+1. Reads the package name and version from `uapkg.json`.
+1. Resolves a GitHub Release tag.
+1. Exchanges `core.getIDToken('uapkg')` for a short-lived UAPKG OIDC session.
+1. Submits only the GitHub Release repository, tag, asset name, and manifest
+   path to the UAPKG control plane.
+1. Waits for the registry request to reach a terminal state, unless detached.
 
-The registry bot owns validation and actual publishing.
+The submission idempotency key is a non-secret hash of `GITHUB_RUN_ID`,
+`GITHUB_JOB`, and the exact publish coordinates. Re-running the same workflow
+run can therefore reconcile an ambiguous network result without creating a
+second request; changing the coordinates produces a different key.
+
+The action does not download or validate the release asset, calculate or
+submit a digest, upload package content, create a GitHub issue, or mutate a
+registry repository. The server uses the UAPKG GitHub User App installation
+to resolve and pin the release, commit, tree, asset, GitHub-provided digest,
+and manifest before authorizing publication.
+
+Trusted publishing is exact-package-only. The package must already exist and
+have a matching trusted-publisher rule. Initial package publication is a human
+workflow and cannot be bootstrapped by this action.
+
+## Prerequisites
+
+- Create the package through an attended UAPKG publication.
+- Install the UAPKG GitHub User App on the source repository.
+- Configure a GitHub Actions trusted-publisher rule for the exact registry,
+  package, repository identity, workflow, and applicable ref/environment/event
+  policy.
+- Grant the workflow `id-token: write`. `contents: read` is normally also
+  needed by `actions/checkout`.
+
+No UAPKG token is stored in GitHub secrets.
 
 ## Inputs
 
-### `token`
+### `registry-id`
 
 - Required: `true`
-- GitHub token used to search/create issues in the target registry repository.
+- Canonical UUID of the target UAPKG registry.
 
-### `registry-repo`
-
-- Required: `false`
-- Default: `uapkg/registry`
-- Target registry repository in `owner/name` form.
+This is a non-secret stable identifier, not a registry alias or Git repository.
 
 ### `manifest-path`
 
 - Required: `false`
 - Default: `uapkg.json`
-- Path to the package manifest.
+- Repository-relative path to the package manifest.
+
+The path must remain inside the repository and end in `uapkg.json`.
 
 ### `release-tag`
 
 - Required: `false`
-- Explicit release tag/ref to publish.
+- GitHub Release tag to publish.
 
-Release resolution order:
+Resolution order:
 
-1. Explicit `release-tag`
-1. `github.event.release.tag_name`
-1. `github.ref_name` when `github.ref_type == tag`
-1. Fail
+1. Explicit `release-tag`.
+1. `github.event.release.tag_name`.
+1. `github.ref_name` when `github.ref_type == tag`.
+1. `v<version>` when the manifest version is valid SemVer.
 
-### `existing-request-policy`
+### `asset`
 
 - Required: `false`
-- Default: `reuse-existing`
-- Allowed values:
-  - `create-new`
-  - `reuse-existing`
-  - `fail-if-existing`
+- Default: `package.tgz`
+- Exact GitHub Release asset name.
 
-Behavior:
+This is a coordinate only. The UAPKG server resolves and verifies the asset.
 
-- `create-new`: always create a new issue.
-- `reuse-existing`: find an open matching issue by token user; reuse if found,
-  otherwise create.
-- `fail-if-existing`: same lookup as `reuse-existing`, but fail if found.
+### `detach`
+
+- Required: `false`
+- Default: `false`
+- When `true`, return after the request is accepted for processing.
+
+The default polls the request to a terminal result. The action succeeds only
+for `accepted`; `failed`, `timed_out`, and `finalization_failed` fail the step.
 
 ## Outputs
 
-- `issue-number`: registry issue number
-- `issue-url`: registry issue URL
-- `issue-state`: `created` or `existing`
-- `package-name`: package name from `uapkg.json`
-- `package-version`: package version from `uapkg.json`
-- `package-source`: package source in `owner/repo` form (from
-  `GITHUB_REPOSITORY`)
-- `release-tag`: resolved release tag/ref
+- `request-id`: UAPKG registry request identifier.
+- `request-status`: last observed request status.
+- `package-name`: package name from `uapkg.json`.
+- `package-version`: package version from `uapkg.json`.
+- `package-source`: source repository from `GITHUB_REPOSITORY`.
+- `release-tag`: resolved GitHub Release tag.
 
-## Release Asset Discovery
-
-Before creating or reusing a publish request, the action checks release assets
-for the resolved release tag in the source repository.
-
-Accepted asset names:
-
-- `package.tgz`
-- `<package-name>.tgz`
-- `<package-name>@<package-version>.tgz`
-
-Rules:
-
-- No matching asset: fail.
-- More than one matching asset: fail (ambiguous).
-- Asset content is not downloaded or validated.
-
-## Issue Identity
-
-Canonical issue title:
-
-`[publish] <package-name>@<package-version>`
-
-Issue body:
-
-```md
-### Package Name
-
-my-package
-
-### Version
-
-1.2.0
-
-### Source
-
-org/repo
-
-### Ref
-
-v1.2.0
-```
-
-Existing issue lookup uses open issues authored by the token user.
-
-## Job Summary
-
-This action appends a Markdown summary to `GITHUB_STEP_SUMMARY`.
-
-- It does not overwrite prior step summaries.
-- It includes success/failure status, package/ref context, issue details, and
-  diagnostic counts.
-
-GitHub uploads one summary per step and then aggregates all step summaries into
-the job summary view.
-
-## Example Usage
+## Example
 
 ```yaml
-name: Publish uapkg
+name: Publish UAPKG package
 
 on:
   release:
@@ -152,108 +122,36 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Submit uapkg publish request
+      - name: Publish existing package
         id: publish
-        uses: uapkg/publish-action@v1
+        uses: uapkg/publish-action@v2
         with:
-          token: ${{ secrets.uapkg_PUBLISH_TOKEN }}
+          registry-id: 11111111-1111-4111-8111-111111111111
 
-      - name: Print publish issue
-        run: echo "Issue URL: ${{ steps.publish.outputs.issue-url }}"
+      - name: Print request
+        env:
+          REQUEST_ID: ${{ steps.publish.outputs.request-id }}
+          REQUEST_STATUS: ${{ steps.publish.outputs.request-status }}
+        run: echo "$REQUEST_ID finished as $REQUEST_STATUS"
 ```
 
 ## Development
 
-Install dependencies:
+Install dependencies and run the complete validation:
 
 ```bash
 npm install
-```
-
-Run tests:
-
-```bash
-npm run test
-```
-
-Lint the repository:
-
-```bash
-npm run lint
-```
-
-Fix lint issues where possible:
-
-```bash
-npm run lint:fix
-```
-
-Check formatting:
-
-```bash
 npm run format:check
+npm run lint
+npm run typecheck
+npm test
+npm run package
 ```
 
-Write formatting fixes:
-
-```bash
-npm run format:write
-```
-
-Linting and formatting stack:
-
-- Biome for JavaScript, TypeScript, JSON, and related files.
-- `actionlint` for GitHub Actions workflows.
-- Prettier with default settings for YAML (`*.yml`, `*.yaml`).
-
-Husky pre-commit hook runs `npm run lint` locally.
-
-Bundle the action:
-
-```bash
-npm run bundle
-```
-
-Run release smoke checks:
-
-```bash
-npm run smoke:release
-```
-
-## Release Process
-
-This repository uses Changesets to automate release pull requests and publishing.
-
-Create a changeset for release-worthy changes:
-
-```bash
-npm run changeset
-```
-
-When changesets are merged to `main`, the release workflow:
-
-1. Opens or updates a release PR with version bumps.
-1. Publishes a release after that PR is merged.
-1. Runs tests and regenerates release badges (`coverage`, `version`, `test`, and `source-sha`).
-1. Builds `dist/index.js` and `dist/index.js.map`.
-1. Runs release smoke checks.
-1. Creates an orphan-branch release commit (`action-release`) with:
-  - `action.yml`
-  - `badges/`
-  - `dist/`
-  - `README.md`
-  - `LICENSE`
-  - `.release.json` metadata
-1. Updates `badges/` on `main` only when the published version is the semver-latest release.
-1. Pushes:
-  - immutable tag `vX.Y.Z`
-  - mutable major tag `vX` (semver-max target for that major)
-1. Creates a GitHub release using `softprops/action-gh-release`.
-
-`dist/` is intentionally not tracked on `main`.
-
-Source maps are always generated for release bundles.
+`npm run package` bundles `src/index.ts` to `dist/index.js` for the action
+runtime. This repository uses Changesets for release versioning.

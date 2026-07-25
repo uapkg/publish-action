@@ -54,6 +54,7 @@ describe('main.ts', () => {
 
     await run()
 
-    expect(core.setFailed).toHaveBeenCalledWith('boom')
+    expect(core.setFailed).toHaveBeenCalledWith('The uapkg publish action failed unexpectedly.')
+    expect(core.setFailed).not.toHaveBeenCalledWith(expect.stringContaining('boom'))
   })
 })
